@@ -1,0 +1,6 @@
+name = "cyberdaily"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = ".vercel/output/static"
