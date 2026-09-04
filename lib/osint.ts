@@ -30,38 +30,64 @@ const SUBREDDITS = [
   "ReverseEngineering",
   "AskNetsec",
   "computerforensics",
+  "infosec",
+  "hacking",
 ];
+
+function mapPosts(data: any, sub: string): OsintPost[] {
+  return (data.data?.children || []).map((child: any) => {
+    const post = child.data;
+    return {
+      title: post.title,
+      url: post.url?.startsWith("http")
+        ? post.url
+        : `https://reddit.com${post.permalink}`,
+      source: `r/${sub}`,
+      score: post.score || 0,
+      comments: post.num_comments || 0,
+      timeAgo: timeAgo(new Date(post.created_utc * 1000).toISOString()),
+      subreddit: sub,
+      flair: post.link_flair_text || null,
+    };
+  });
+}
+
+async function fetchJson(sub: string, host: string): Promise<Response> {
+  return fetch(`https://${host}/r/${sub}/hot.json?limit=15&raw_json=1`, {
+    headers: {
+      "User-Agent":
+        "CyberDaily/1.0 (Cybersecurity News Aggregator; +https://cyberdaily.pages.dev)",
+    },
+    next: { revalidate: 900 }, // 15 min cache
+  });
+}
 
 async function fetchSubreddit(sub: string): Promise<OsintPost[]> {
   try {
-    const res = await fetch(
-      `https://old.reddit.com/r/${sub}/hot.json?limit=15`,
-      {
-        headers: {
-          "User-Agent": "CyberDaily/1.0 (Cybersecurity News Aggregator)",
-        },
-        next: { revalidate: 900 }, // 15 min cache
-      }
-    );
+    let res = await fetchJson(sub, "www.reddit.com");
 
-    if (!res.ok) throw new Error(`Reddit ${res.status}`);
+    // Fallback: www is more reliable from serverless, but try old.reddit.com if blocked
+    if (!res.ok) {
+      console.error(
+        `Reddit r/${sub} returned ${res.status}: ${res.statusText} (www.reddit.com)`
+      );
+      res = await fetchJson(sub, "old.reddit.com");
+      if (!res.ok) {
+        console.error(
+          `Reddit r/${sub} returned ${res.status}: ${res.statusText} (old.reddit.com fallback)`
+        );
+        throw new Error(`Reddit ${res.status}`);
+      }
+    }
+
     const data = await res.json();
 
-    return (data.data?.children || []).map((child: any) => {
-      const post = child.data;
-      return {
-        title: post.title,
-        url: post.url?.startsWith("http")
-          ? post.url
-          : `https://reddit.com${post.permalink}`,
-        source: `r/${sub}`,
-        score: post.score || 0,
-        comments: post.num_comments || 0,
-        timeAgo: timeAgo(new Date(post.created_utc * 1000).toISOString()),
-        subreddit: sub,
-        flair: post.link_flair_text || null,
-      };
-    });
+    if (!data?.data?.children?.length) {
+      console.warn(`Reddit r/${sub} returned no posts`);
+      return [];
+    }
+
+    return mapPosts(data, sub);
   } catch (error) {
     console.error(`Error fetching r/${sub}:`, error);
     return [];

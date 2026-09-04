@@ -12,7 +12,7 @@ export default function Home() {
     <div className="min-h-screen bg-cyber-dark font-sans">
       <Header />
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-6">
         <StatsBar />
 
         {/* Threat Intelligence Analytics */}
@@ -33,12 +33,12 @@ export default function Home() {
         </div>
 
         {/* Threat Map - Hero, ~45% viewport */}
-        <div className="mb-8 h-[45vh] min-h-[380px]">
+        <div className="mb-6 sm:mb-8 h-[35vh] sm:h-[40vh] lg:h-[45vh] min-h-[280px]">
           <ThreatMap />
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
           {/* News Feed - 2 columns */}
           <div className="lg:col-span-2">
             <div className="panel rounded-lg overflow-hidden">
@@ -66,8 +66,8 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-cyber-cyan/10 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-xs text-gray-600 font-mono">
+      <footer className="border-t border-cyber-cyan/10 mt-8 sm:mt-12">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 text-center text-xs text-gray-600 font-mono">
           <p className="text-gray-500">CyberDaily — Cybersecurity Intelligence Dashboard</p>
           <p className="mt-1">
             Data sources: RSS Feeds • CISA KEV • NVD CVE • abuse.ch • Hacker News • OSINT

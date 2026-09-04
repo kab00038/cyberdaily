@@ -21,6 +21,8 @@ const SUBREDDIT_COLORS: Record<string, string> = {
   ReverseEngineering: "text-purple-400",
   AskNetsec: "text-green-400",
   computerforensics: "text-cyan-400",
+  infosec: "text-yellow-400",
+  hacking: "text-pink-400",
 };
 
 export default function OsintFeed() {
