@@ -20,6 +20,8 @@ jobs:
 
       - name: Build
         run: npm run pages:build
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       - name: Ensure Pages project exists
         run: npx wrangler pages project create cyberdaily --production-branch master || true
         env:
