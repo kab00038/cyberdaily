@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getCategoryColor, getCategoryLabel, ThreatCategory } from "@/lib/ai";
 
 interface NewsItem {
   title: string;
@@ -10,6 +11,9 @@ interface NewsItem {
   source: string;
   pubDate: string;
   thumbnail?: string;
+  aiSummary?: string | null;
+  category?: string;
+  urgency?: string;
 }
 
 const SOURCE_STYLES: Record<string, { border: string; badge: string; glow: string }> = {
@@ -69,6 +73,7 @@ export default function NewsFeed() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(10);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   useEffect(() => {
     async function fetchNews() {
@@ -101,9 +106,37 @@ export default function NewsFeed() {
     );
   }
 
+  const categories = [
+    "all",
+    ...new Set(news.map((n) => n.category).filter((c): c is string => Boolean(c))),
+  ];
+
+  // Filter news by selected category
+  const filteredNews =
+    selectedCategory === "all"
+      ? news
+      : news.filter((n) => n.category === selectedCategory);
+
   return (
     <div className="space-y-3">
-      {news.slice(0, visibleCount).map((item, i) => {
+      {/* Category filter buttons */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={`text-[10px] px-2 py-1 rounded border transition-colors ${
+              selectedCategory === cat
+                ? "bg-cyber-cyan/20 text-cyber-cyan border-cyber-cyan/40"
+                : "bg-cyber-dark/50 text-gray-400 border-gray-700 hover:border-gray-500"
+            }`}
+          >
+            {cat === "all" ? "All" : getCategoryLabel(cat as ThreatCategory)}
+          </button>
+        ))}
+      </div>
+
+      {filteredNews.slice(0, visibleCount).map((item, i) => {
         const style = SOURCE_STYLES[item.source] || DEFAULT_STYLE;
         return (
           <a
@@ -125,12 +158,37 @@ export default function NewsFeed() {
                 />
               )}
               <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  {/* Category badge */}
+                  {item.category && item.category !== "general" && (
+                    <span
+                      className={`text-[9px] px-1.5 py-0.5 rounded border ${getCategoryColor(item.category as ThreatCategory)} font-medium uppercase tracking-wider`}
+                    >
+                      {getCategoryLabel(item.category as ThreatCategory)}
+                    </span>
+                  )}
+                  {/* Urgency dot */}
+                  {item.urgency && (
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        item.urgency === "critical" ? "bg-red-500" :
+                        item.urgency === "high" ? "bg-orange-500" :
+                        item.urgency === "medium" ? "bg-yellow-500" :
+                        "bg-green-500"
+                      }`}
+                    />
+                  )}
+                </div>
                 <h3 className="text-sm font-semibold text-white line-clamp-2 mb-1 group-hover:text-cyber-cyan transition-colors">
                   {item.title}
                 </h3>
+                {/* AI summary or fallback to snippet */}
                 <p className="text-xs text-gray-400 line-clamp-2 mb-3 leading-relaxed">
-                  {item.snippet}
+                  {item.aiSummary || item.snippet}
                 </p>
+                {item.aiSummary && (
+                  <span className="text-[9px] text-cyber-cyan/60 font-mono">AI</span>
+                )}
                 <div className="flex items-center gap-3">
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded border ${style.badge} font-medium uppercase tracking-wider`}
@@ -147,7 +205,7 @@ export default function NewsFeed() {
         );
       })}
 
-      {visibleCount < news.length && (
+      {visibleCount < filteredNews.length && (
         <button
           onClick={() => setVisibleCount((prev) => prev + 10)}
           className="w-full py-3 text-xs font-mono uppercase tracking-widest text-cyber-cyan border border-cyber-cyan/20 rounded-lg hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40 transition-all duration-300"
