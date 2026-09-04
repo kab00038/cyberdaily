@@ -4,11 +4,15 @@
 import StatsBar from "@/components/StatsBar";
 import ThreatMap from "@/components/ThreatMap";
 import TrendAnalytics from "@/components/TrendAnalytics";
+import ThreatSurface from "@/components/ThreatSurface";
 
 export default function DashboardSection() {
   return (
     <div className="space-y-6">
       <StatsBar />
+
+      {/* Threat surface overview */}
+      <ThreatSurface />
 
       {/* Trend analytics */}
       <div className="panel rounded-lg overflow-hidden">

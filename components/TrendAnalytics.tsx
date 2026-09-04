@@ -119,8 +119,8 @@ export default function TrendAnalytics() {
               <Area
                 type="monotone"
                 dataKey="count"
-                stroke="#00f0ff"
-                fill="#00f0ff"
+                stroke="#06b6d4"
+                fill="#06b6d4"
                 fillOpacity={0.1}
                 strokeWidth={2}
               />
@@ -182,7 +182,7 @@ export default function TrendAnalytics() {
                   fontSize: "12px",
                 }}
               />
-              <Bar dataKey="count" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -210,7 +210,7 @@ export default function TrendAnalytics() {
                   fontSize: "12px",
                 }}
               />
-              <Bar dataKey="count" fill="#00f0ff" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="count" fill="#06b6d4" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -90,26 +90,33 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-screen bg-cyber-navy/95 md:bg-cyber-navy/80 backdrop-blur-md border-r border-gray-800/50 transition-all duration-300 z-50
+        className={`fixed left-0 top-0 h-screen transition-all duration-300 z-50
+          bg-gradient-to-b from-cyber-dark/95 via-cyber-navy/90 to-cyber-dark/95
+          backdrop-blur-xl border-r border-cyan-500/10
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
-          ${collapsed ? "md:w-16" : "md:w-56"}
-          w-56
+          ${collapsed ? "md:w-20" : "md:w-60"}
+          w-60
         `}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800/50">
+        <div className="flex items-center justify-between p-5 border-b border-cyan-500/10">
           {!collapsed && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-cyber-cyan/20 rounded-lg flex items-center justify-center">
-                <span className="text-cyber-cyan text-sm">🛡️</span>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyber-cyan/30 to-cyber-purple/30 border border-cyan-500/30 flex items-center justify-center shadow-glow-cyan">
+                <svg className="w-5 h-5 text-cyber-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
               </div>
-              <span className="text-sm font-bold text-white">CyberDaily</span>
+              <div>
+                <span className="text-sm font-bold text-white tracking-wide">CyberDaily</span>
+                <p className="text-[10px] text-cyber-cyan/70 font-mono uppercase tracking-wider">CyFocus</p>
+              </div>
             </div>
           )}
           <button
             onClick={onToggleCollapse}
-            className="p-1.5 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-colors"
+            className={`p-1.5 rounded-lg hover:bg-cyan-500/10 text-gray-400 hover:text-cyber-cyan transition-all duration-200 ${collapsed ? "mx-auto" : ""}`}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,31 +130,46 @@ export default function Sidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                activeSection === item.id
-                  ? "bg-cyber-cyan/15 text-cyber-cyan border border-cyber-cyan/20"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800/50 border border-transparent"
-              }`}
-            >
-              <span className="flex-shrink-0">{item.icon}</span>
-              {!collapsed && (
-                <span className="text-sm font-medium">{item.label}</span>
-              )}
-            </button>
-          ))}
+        <nav className="p-4 space-y-1.5">
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                  isActive
+                    ? "text-cyber-cyan"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {isActive && (
+                  <span className="absolute inset-0 bg-gradient-to-r from-cyber-cyan/15 to-cyber-purple/10 rounded-xl border border-cyan-500/20" />
+                )}
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-cyber-cyan transition-all duration-200 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}" />
+                <span className={`relative flex-shrink-0 ${isActive ? "text-cyber-cyan" : "group-hover:text-cyber-cyan transition-colors"}`}>
+                  {item.icon}
+                </span>
+                {!collapsed && (
+                  <span className="relative text-sm font-medium">{item.label}</span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Status indicator */}
-        <div className="absolute bottom-4 left-0 right-0 px-4">
+        <div className="absolute bottom-5 left-0 right-0 px-5">
           {!collapsed && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span>Live monitoring</span>
+            <div className="panel p-3 flex items-center gap-3">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyber-green" />
+              </span>
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Live monitoring</p>
+                <p className="text-[10px] text-cyber-green font-mono">Operational</p>
+              </div>
             </div>
           )}
         </div>

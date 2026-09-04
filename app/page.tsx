@@ -37,7 +37,7 @@ export default function Home() {
   }, [activeSection]);
 
   return (
-    <div className="min-h-screen bg-cyber-dark font-sans">
+    <div className="min-h-screen font-sans">
       <Sidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}

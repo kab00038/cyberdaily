@@ -102,7 +102,7 @@ export default function ThreatMap() {
       <div className="panel-header p-4 flex items-center justify-between shrink-0">
         <div>
           <h2 className="text-lg font-semibold text-white flex items-center gap-3">
-            <span className="w-2 h-2 bg-cyber-red rounded-full animate-pulse shadow-[0_0_10px_rgba(255,71,87,0.8)]" />
+            <span className="w-2 h-2 bg-cyber-red rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
             Global Threat Map
           </h2>
           <p className="text-xs text-gray-400 mt-1 font-mono">
@@ -155,7 +155,7 @@ export default function ThreatMap() {
                 <motion.circle
                   r={radius}
                   fill="none"
-                  stroke="#ff4757"
+                  stroke="#ef4444"
                   strokeWidth={1.5}
                   initial={{ r: radius, opacity: 0.7 }}
                   animate={{ r: radius + 16, opacity: 0 }}
@@ -168,16 +168,16 @@ export default function ThreatMap() {
                 />
                 <circle
                   r={radius}
-                  fill="#ff4757"
-                  fillOpacity={0.25}
-                  stroke="#ff4757"
+                  fill="#ef4444"
+                  fillOpacity={0.18}
+                  stroke="#ef4444"
                   strokeWidth={1}
                   style={{
                     cursor: "pointer",
-                    filter: "drop-shadow(0 0 6px rgba(255,71,87,0.6))",
+                    filter: "drop-shadow(0 0 8px rgba(239,68,68,0.5))",
                   }}
                 />
-                <circle r={2} fill="#ff4757" />
+                <circle r={2} fill="#ef4444" />
               </Marker>
             );
           })}
@@ -204,7 +204,7 @@ export default function ThreatMap() {
         {/* Legend */}
         <div className="absolute bottom-4 left-4 bg-cyber-dark/80 border border-cyber-cyan/20 rounded-lg p-3 text-xs backdrop-blur-sm z-20">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full border border-cyber-red bg-cyber-red/30 shadow-[0_0_8px_rgba(255,71,87,0.5)]" />
+            <span className="w-3 h-3 rounded-full border border-cyber-red bg-cyber-red/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
             <span className="text-gray-400 font-mono">Attack Source (size = activity)</span>
           </div>
         </div>
