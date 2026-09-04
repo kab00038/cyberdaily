@@ -2,14 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-interface CVEItem {
-  id: string;
-  description: string;
-  cvssScore: number | null;
-  severity: string | null;
-  published: string;
-}
+import { RiskScoredCVE, scoreToColor } from "@/lib/risk-scoring";
 
 interface KEVItem {
   cveID: string;
@@ -58,7 +51,7 @@ function severityBarWidth(score: number | null): string {
 }
 
 export default function ThreatForecast() {
-  const [cves, setCves] = useState<CVEItem[]>([]);
+  const [cves, setCves] = useState<RiskScoredCVE[]>([]);
   const [kev, setKev] = useState<KEVItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -136,38 +129,68 @@ export default function ThreatForecast() {
           </h3>
         </div>
         <div className="divide-y divide-cyber-cyan/5">
-          {cves.slice(0, 5).map((cve) => {
-            const config = cve.severity
-              ? SEVERITY_CONFIG[cve.severity] || DEFAULT_SEVERITY
-              : DEFAULT_SEVERITY;
-            return (
-              <div key={cve.id} className="p-4 hover:bg-cyber-dark/40 transition-colors group">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="text-xs font-mono text-cyber-green glow-text-green group-hover:text-cyber-cyan transition-colors">
-                    {cve.id}
-                  </span>
-                  {cve.severity && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded border border-white/10 ${config.color} bg-white/5 font-medium uppercase tracking-wider`}
-                    >
-                      {cve.severity}
+          {cves
+            .slice()
+            .sort((a, b) => b.riskScore - a.riskScore)
+            .slice(0, 8)
+            .map((cve) => {
+              const config = cve.severity
+                ? SEVERITY_CONFIG[cve.severity] || DEFAULT_SEVERITY
+                : DEFAULT_SEVERITY;
+              return (
+                <div key={cve.id} className="p-4 hover:bg-cyber-dark/40 transition-colors group">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-xs font-mono text-cyber-green glow-text-green group-hover:text-cyber-cyan transition-colors">
+                      {cve.id}
                     </span>
+                    <div className="flex items-center gap-2">
+                      {cve.inKEV && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/40">
+                          KEV
+                        </span>
+                      )}
+                      <span className={`text-xs px-2 py-0.5 rounded border ${scoreToColor(cve.riskLevel)}`}>
+                        {cve.riskLevel} ({cve.riskScore})
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 line-clamp-2 mb-2">{cve.description}</p>
+
+                  {/* Risk factors */}
+                  {cve.riskFactors.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {cve.riskFactors.map((factor, i) => (
+                        <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-dark/50 text-gray-500">
+                          {factor}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* EPSS + CVSS details */}
+                  <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                    {cve.cvssScore !== null && <span>CVSS: {cve.cvssScore}</span>}
+                    {cve.epssScore && (
+                      <span>EPSS: {(parseFloat(cve.epssScore.epss) * 100).toFixed(1)}%</span>
+                    )}
+                    {cve.epssScore && (
+                      <span>Percentile: {cve.epssScore.percentile}</span>
+                    )}
+                  </div>
+
+                  {cve.cvssScore !== null && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${config.bar} ${config.glow} ${severityBarWidth(cve.cvssScore)}`}
+                        />
+                      </div>
+                      <span className={`text-[10px] font-mono ${config.color}`}>{cve.cvssScore}</span>
+                    </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 line-clamp-2 mb-3">{cve.description}</p>
-                {cve.cvssScore !== null && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${config.bar} ${config.glow} ${severityBarWidth(cve.cvssScore)}`}
-                      />
-                    </div>
-                    <span className={`text-[10px] font-mono ${config.color}`}>{cve.cvssScore}</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       </div>
     </div>
