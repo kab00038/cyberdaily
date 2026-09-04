@@ -37,7 +37,10 @@ export default function Home() {
   }, [activeSection]);
 
   return (
-    <div className="min-h-screen font-sans">
+    <div className="min-h-screen font-sans relative">
+      {/* Ambient warm haze */}
+      <div className="ambient-glow" aria-hidden="true" />
+
       <Sidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
@@ -48,27 +51,27 @@ export default function Home() {
       />
 
       <main
-        className={`min-h-screen transition-all duration-300 ${
+        className={`min-h-screen relative z-10 transition-all duration-300 ${
           sidebarCollapsed ? "md:ml-16" : "md:ml-56"
         } ml-0`}
       >
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-cyber-dark/80 backdrop-blur-md border-b border-gray-800/50">
+        <header className="sticky top-0 z-40 bg-[#0F0A08]/80 backdrop-blur-md border-b border-[rgba(200,160,120,0.08)]">
           <div className="px-4 sm:px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setMobileOpen((prev) => !prev)}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-800/50 text-gray-400 hover:text-white transition-colors"
+                className="md:hidden p-2 rounded-lg hover:bg-[rgba(200,160,120,0.08)] text-[#8A7A6A] hover:text-[#F0E8E0] transition-colors"
                 aria-label="Toggle navigation"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <h1 className="text-lg font-semibold text-white capitalize">{pageTitle}</h1>
+              <h1 className="text-lg font-semibold text-[#F0E8E0] capitalize font-display">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-gray-400 font-mono">
+              <span className="text-xs text-[#8A7A6A] font-mono">
                 {now.toLocaleTimeString("en-US", { timeZone: "UTC", hour12: false })} UTC
               </span>
             </div>

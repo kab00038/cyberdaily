@@ -65,9 +65,9 @@ export function calculateRiskScore(
 
 export function scoreToColor(level: RiskScoredCVE["riskLevel"]): string {
   switch (level) {
-    case "CRITICAL": return "text-red-500 bg-red-500/20 border-red-500/40";
-    case "HIGH": return "text-orange-500 bg-orange-500/20 border-orange-500/40";
-    case "MEDIUM": return "text-yellow-500 bg-yellow-500/20 border-yellow-500/40";
-    case "LOW": return "text-green-500 bg-green-500/20 border-green-500/40";
+    case "CRITICAL": return "text-[#F07050] bg-[#E85030]/20 border-[#E85030]/40";
+    case "HIGH": return "text-[#F09060] bg-[#E8531E]/20 border-[#E8531E]/40";
+    case "MEDIUM": return "text-[#F0B880] bg-[#D08040]/20 border-[#D08040]/40";
+    case "LOW": return "text-[#60D0A0] bg-[#2EAA7A]/20 border-[#2EAA7A]/40";
   }
 }

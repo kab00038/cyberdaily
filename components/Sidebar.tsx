@@ -91,8 +91,8 @@ export default function Sidebar({
 
       <aside
         className={`fixed left-0 top-0 h-screen transition-all duration-300 z-50
-          bg-gradient-to-b from-cyber-dark/95 via-cyber-navy/90 to-cyber-dark/95
-          backdrop-blur-xl border-r border-cyan-500/10
+          bg-[#120E0B]
+          backdrop-blur-xl border-r border-[rgba(200,160,120,0.08)]
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
           ${collapsed ? "md:w-20" : "md:w-60"}
@@ -100,23 +100,23 @@ export default function Sidebar({
         `}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between p-5 border-b border-cyan-500/10">
+        <div className="flex items-center justify-between p-5 border-b border-[rgba(200,160,120,0.08)]">
           {!collapsed && (
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyber-cyan/30 to-cyber-purple/30 border border-cyan-500/30 flex items-center justify-center shadow-glow-cyan">
-                <svg className="w-5 h-5 text-cyber-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E8531E]/30 to-[#E87030]/20 border border-[#E8531E]/30 flex items-center justify-center shadow-[0_0_16px_rgba(232,83,30,0.25)]">
+                <svg className="w-5 h-5 text-[#E8531E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
               <div>
-                <span className="text-sm font-bold text-white tracking-wide">CyberDaily</span>
-                <p className="text-[10px] text-cyber-cyan/70 font-mono uppercase tracking-wider">CyFocus</p>
+                <span className="text-sm font-bold text-[#F0E8E0] tracking-wide font-display">CyberDaily</span>
+                <p className="text-[10px] text-[#E87030] font-mono uppercase tracking-wider">CyFocus</p>
               </div>
             </div>
           )}
           <button
             onClick={onToggleCollapse}
-            className={`p-1.5 rounded-lg hover:bg-cyan-500/10 text-gray-400 hover:text-cyber-cyan transition-all duration-200 ${collapsed ? "mx-auto" : ""}`}
+            className={`p-1.5 rounded-lg hover:bg-[rgba(232,83,30,0.08)] text-[#8A7A6A] hover:text-[#F0E8E0] transition-all duration-200 ${collapsed ? "mx-auto" : ""}`}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,15 +139,15 @@ export default function Sidebar({
                 onClick={() => handleNavClick(item.id)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden ${
                   isActive
-                    ? "text-cyber-cyan"
-                    : "text-gray-400 hover:text-white"
+                    ? "text-[#F0E8E0]"
+                    : "text-[#8A7A6A] hover:text-[#F0E8E0]"
                 }`}
               >
                 {isActive && (
-                  <span className="absolute inset-0 bg-gradient-to-r from-cyber-cyan/15 to-cyber-purple/10 rounded-xl border border-cyan-500/20" />
+                  <span className="absolute inset-0 bg-gradient-to-r from-[#E8531E]/15 to-transparent rounded-xl border border-[rgba(232,83,30,0.18)]" />
                 )}
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-cyber-cyan transition-all duration-200 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}" />
-                <span className={`relative flex-shrink-0 ${isActive ? "text-cyber-cyan" : "group-hover:text-cyber-cyan transition-colors"}`}>
+                <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-[#E8531E] transition-all duration-200 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`} />
+                <span className={`relative flex-shrink-0 transition-colors ${isActive ? "text-[#E8531E]" : "group-hover:text-[#E8531E]"}`}>
                   {item.icon}
                 </span>
                 {!collapsed && (
@@ -163,12 +163,12 @@ export default function Sidebar({
           {!collapsed && (
             <div className="panel p-3 flex items-center gap-3">
               <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyber-green" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2EAA7A] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#2EAA7A]" />
               </span>
               <div>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Live monitoring</p>
-                <p className="text-[10px] text-cyber-green font-mono">Operational</p>
+                <p className="text-[10px] text-[#8A7A6A] uppercase tracking-wider">Live monitoring</p>
+                <p className="text-[10px] text-[#2EAA7A] font-mono">Operational</p>
               </div>
             </div>
           )}

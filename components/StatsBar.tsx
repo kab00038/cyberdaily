@@ -49,10 +49,11 @@ export default function StatsBar() {
     {
       label: "Attacks Tracked",
       value: stats.attacksToday,
-      color: "text-cyber-red",
+      color: "text-[#F0E8E0]",
+      accent: "text-[#E85030]",
       glow: "glow-text-red",
-      bg: "from-red-500/20 to-red-600/5",
-      border: "border-red-500/20",
+      bg: "from-[#E85030]/20 to-[#E85030]/5",
+      border: "border-[#E85030]/20",
       shadow: "shadow-glow-red",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,10 +64,11 @@ export default function StatsBar() {
     {
       label: "New CVEs",
       value: stats.newCVEs,
-      color: "text-cyber-amber",
-      glow: "glow-text-amber",
-      bg: "from-amber-500/20 to-amber-600/5",
-      border: "border-amber-500/20",
+      color: "text-[#F0E8E0]",
+      accent: "text-[#E8531E]",
+      glow: "glow-text-orange",
+      bg: "from-[#E8531E]/20 to-[#E8531E]/5",
+      border: "border-[#E8531E]/20",
       shadow: "",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,11 +79,12 @@ export default function StatsBar() {
     {
       label: "KEV Additions",
       value: stats.kevAdditions,
-      color: "text-cyber-cyan",
-      glow: "glow-text-cyan",
-      bg: "from-cyan-500/20 to-cyan-600/5",
-      border: "border-cyan-500/20",
-      shadow: "shadow-glow-cyan",
+      color: "text-[#F0E8E0]",
+      accent: "text-[#E87030]",
+      glow: "glow-text-amber",
+      bg: "from-[#E87030]/20 to-[#E87030]/5",
+      border: "border-[#E87030]/20",
+      shadow: "",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -91,10 +94,11 @@ export default function StatsBar() {
     {
       label: "Sources",
       value: stats.sourcesMonitored,
-      color: "text-cyber-green",
+      color: "text-[#F0E8E0]",
+      accent: "text-[#2EAA7A]",
       glow: "glow-text-green",
-      bg: "from-green-500/20 to-green-600/5",
-      border: "border-green-500/20",
+      bg: "from-[#2EAA7A]/20 to-[#2EAA7A]/5",
+      border: "border-[#2EAA7A]/20",
       shadow: "shadow-glow-green",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,9 +113,9 @@ export default function StatsBar() {
       {statItems.map((item) => (
         <div
           key={item.label}
-          className={`panel p-5 flex items-start gap-4 group hover:-translate-y-1 hover:border-cyber-cyan/30 transition-all duration-300 bg-gradient-to-br ${item.bg} border ${item.border}`}
+          className={`panel p-5 flex items-start gap-4 group bg-gradient-to-br ${item.bg} border ${item.border} hover:border-[#E8531E]/30`}
         >
-          <div className={`flex-shrink-0 w-11 h-11 rounded-xl bg-cyber-dark/60 border border-cyan-500/20 flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform duration-300`}>
+          <div className={`flex-shrink-0 w-11 h-11 rounded-xl bg-[#0F0A08]/60 border border-[rgba(200,160,120,0.12)] flex items-center justify-center ${item.accent} group-hover:scale-110 transition-transform duration-300`}>
             {item.icon}
           </div>
           <div className="min-w-0 flex-1">
@@ -120,7 +124,7 @@ export default function StatsBar() {
             >
               {item.value.toLocaleString()}
             </p>
-            <p className="text-[11px] text-gray-400 uppercase tracking-widest font-medium mt-0.5">
+            <p className="text-[11px] text-[#8A7A6A] uppercase tracking-widest font-medium mt-0.5">
               {item.label}
             </p>
           </div>

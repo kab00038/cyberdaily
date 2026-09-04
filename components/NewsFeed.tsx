@@ -18,41 +18,41 @@ interface NewsItem {
 
 const SOURCE_STYLES: Record<string, { border: string; badge: string; glow: string }> = {
   BleepingComputer: {
-    border: "border-blue-500",
-    badge: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-    glow: "hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]",
+    border: "border-[#C87A40]",
+    badge: "bg-[#C87A40]/15 text-[#E0A060] border-[#C87A40]/30",
+    glow: "hover:shadow-[0_0_20px_rgba(200,122,64,0.15)]",
   },
   "The Hacker News": {
-    border: "border-purple-500",
-    badge: "bg-purple-500/15 text-purple-400 border-purple-500/30",
-    glow: "hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]",
+    border: "border-[#A06040]",
+    badge: "bg-[#A06040]/15 text-[#C89070] border-[#A06040]/30",
+    glow: "hover:shadow-[0_0_20px_rgba(160,96,64,0.15)]",
   },
   "Krebs on Security": {
-    border: "border-green-500",
-    badge: "bg-green-500/15 text-green-400 border-green-500/30",
-    glow: "hover:shadow-[0_0_20px_rgba(34,197,94,0.15)]",
+    border: "border-[#2EAA7A]",
+    badge: "bg-[#2EAA7A]/15 text-[#60D0A0] border-[#2EAA7A]/30",
+    glow: "hover:shadow-[0_0_20px_rgba(46,170,122,0.15)]",
   },
   "Dark Reading": {
-    border: "border-orange-500",
-    badge: "bg-orange-500/15 text-orange-400 border-orange-500/30",
-    glow: "hover:shadow-[0_0_20px_rgba(249,115,22,0.15)]",
+    border: "border-[#E8531E]",
+    badge: "bg-[#E8531E]/15 text-[#F09060] border-[#E8531E]/30",
+    glow: "hover:shadow-[0_0_20px_rgba(232,83,30,0.15)]",
   },
   SecurityWeek: {
-    border: "border-cyan-500",
-    badge: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
-    glow: "hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]",
+    border: "border-[#E87030]",
+    badge: "bg-[#E87030]/15 text-[#F0A070] border-[#E87030]/30",
+    glow: "hover:shadow-[0_0_20px_rgba(232,112,48,0.15)]",
   },
   "The Record": {
-    border: "border-pink-500",
-    badge: "bg-pink-500/15 text-pink-400 border-pink-500/30",
-    glow: "hover:shadow-[0_0_20px_rgba(236,72,153,0.15)]",
+    border: "border-[#D08040]",
+    badge: "bg-[#D08040]/15 text-[#F0B880] border-[#D08040]/30",
+    glow: "hover:shadow-[0_0_20px_rgba(208,128,64,0.15)]",
   },
 };
 
 const DEFAULT_STYLE = {
-  border: "border-gray-600",
-  badge: "bg-gray-500/15 text-gray-400 border-gray-500/30",
-  glow: "hover:shadow-[0_0_20px_rgba(156,163,175,0.1)]",
+  border: "border-[#6A5A4A]",
+  badge: "bg-[#6A5A4A]/15 text-[#8A7A6A] border-[#6A5A4A]/30",
+  glow: "hover:shadow-[0_0_20px_rgba(106,90,74,0.1)]",
 };
 
 function timeAgo(dateString: string): string {
@@ -98,8 +98,8 @@ export default function NewsFeed() {
       <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="panel rounded-lg p-4 animate-pulse">
-            <div className="h-4 bg-gray-700/50 rounded w-3/4 mb-2" />
-            <div className="h-3 bg-gray-700/50 rounded w-1/2" />
+            <div className="h-4 bg-[rgba(200,160,120,0.12)] rounded w-3/4 mb-2" />
+            <div className="h-3 bg-[rgba(200,160,120,0.12)] rounded w-1/2" />
           </div>
         ))}
       </div>
@@ -127,8 +127,8 @@ export default function NewsFeed() {
             onClick={() => setSelectedCategory(cat)}
             className={`text-[10px] px-2 py-1 rounded border transition-colors ${
               selectedCategory === cat
-                ? "bg-cyber-cyan/20 text-cyber-cyan border-cyber-cyan/40"
-                : "bg-cyber-dark/50 text-gray-400 border-gray-700 hover:border-gray-500"
+                ? "bg-[#E8531E]/20 text-[#E8531E] border-[#E8531E]/40"
+                : "bg-[#0F0A08]/50 text-[#8A7A6A] border-[rgba(200,160,120,0.12)] hover:border-[#8A7A6A]/50"
             }`}
           >
             {cat === "all" ? "All" : getCategoryLabel(cat as ThreatCategory)}
@@ -144,14 +144,14 @@ export default function NewsFeed() {
             href={item.link}
             target="_blank"
             rel="noopener noreferrer"
-            className={`block panel rounded-lg p-4 border-l-4 ${style.border} ${style.glow} hover:bg-cyber-dark/60 transition-all duration-300 group`}
+            className={`block panel rounded-lg p-4 border-l-4 ${style.border} ${style.glow} hover:bg-[#0F0A08]/60 transition-all duration-300 group`}
           >
             <div className="flex items-start gap-3">
               {item.thumbnail && (
                 <img
                   src={item.thumbnail}
                   alt=""
-                  className="w-16 h-16 object-cover rounded flex-shrink-0 border border-cyber-cyan/10"
+                  className="w-16 h-16 object-cover rounded flex-shrink-0 border border-[rgba(200,160,120,0.1)]"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = "none";
                   }}
@@ -171,23 +171,23 @@ export default function NewsFeed() {
                   {item.urgency && (
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        item.urgency === "critical" ? "bg-red-500" :
-                        item.urgency === "high" ? "bg-orange-500" :
-                        item.urgency === "medium" ? "bg-yellow-500" :
-                        "bg-green-500"
+                        item.urgency === "critical" ? "bg-[#E85030]" :
+                        item.urgency === "high" ? "bg-[#E8531E]" :
+                        item.urgency === "medium" ? "bg-[#D08040]" :
+                        "bg-[#2EAA7A]"
                       }`}
                     />
                   )}
                 </div>
-                <h3 className="text-sm font-semibold text-white line-clamp-2 mb-1 group-hover:text-cyber-cyan transition-colors">
+                <h3 className="text-sm font-semibold text-[#F0E8E0] line-clamp-2 mb-1 group-hover:text-[#E8531E] transition-colors">
                   {item.title}
                 </h3>
                 {/* AI summary or fallback to snippet */}
-                <p className="text-xs text-gray-400 line-clamp-2 mb-3 leading-relaxed">
+                <p className="text-xs text-[#BFB0A0] line-clamp-2 mb-3 leading-relaxed">
                   {item.aiSummary || item.snippet}
                 </p>
                 {item.aiSummary && (
-                  <span className="text-[9px] text-cyber-cyan/60 font-mono">AI</span>
+                  <span className="text-[9px] text-[#E8531E]/60 font-mono">AI</span>
                 )}
                 <div className="flex items-center gap-3">
                   <span
@@ -195,7 +195,7 @@ export default function NewsFeed() {
                   >
                     {item.source}
                   </span>
-                  <span className="text-[10px] text-gray-500 font-mono">
+                  <span className="text-[10px] text-[#8A7A6A] font-mono">
                     {timeAgo(item.pubDate)}
                   </span>
                 </div>
@@ -208,7 +208,7 @@ export default function NewsFeed() {
       {visibleCount < filteredNews.length && (
         <button
           onClick={() => setVisibleCount((prev) => prev + 10)}
-          className="w-full py-3 text-xs font-mono uppercase tracking-widest text-cyber-cyan border border-cyber-cyan/20 rounded-lg hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40 transition-all duration-300"
+          className="w-full py-3 text-xs font-mono uppercase tracking-widest text-[#E8531E] border border-[#E8531E]/20 rounded-lg hover:bg-[#E8531E]/10 hover:border-[#E8531E]/40 transition-all duration-300"
         >
           Load more intelligence
         </button>

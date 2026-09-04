@@ -20,14 +20,14 @@ interface TrendData {
 }
 
 const COLORS = {
-  CRITICAL: "#ef4444",
-  HIGH: "#f97316",
-  MEDIUM: "#eab308",
-  LOW: "#22c55e",
-  UNKNOWN: "#6b7280",
+  CRITICAL: "#E85030",
+  HIGH: "#E87030",
+  MEDIUM: "#D08040",
+  LOW: "#2EAA7A",
+  UNKNOWN: "#6A5A4A",
 };
 
-const PIE_COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#6b7280"];
+const PIE_COLORS = ["#E85030", "#E87030", "#D08040", "#2EAA7A", "#6A5A4A"];
 
 export default function TrendAnalytics() {
   const [data, setData] = useState<TrendData | null>(null);
@@ -56,8 +56,8 @@ export default function TrendAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="panel rounded-lg p-6 animate-pulse">
-            <div className="h-4 bg-gray-700 rounded w-1/3 mb-4" />
-            <div className="h-48 bg-gray-800 rounded" />
+            <div className="h-4 bg-[rgba(200,160,120,0.12)] rounded w-1/3 mb-4" />
+            <div className="h-48 bg-[rgba(200,160,120,0.06)] rounded" />
           </div>
         ))}
       </div>
@@ -74,21 +74,29 @@ export default function TrendAnalytics() {
     value,
   }));
 
+  const tooltipStyle = {
+    backgroundColor: "rgba(18, 14, 11, 0.95)",
+    border: "1px solid rgba(200, 160, 120, 0.15)",
+    borderRadius: "8px",
+    fontSize: "12px",
+    backdropFilter: "blur(8px)",
+  };
+
   return (
     <div className="space-y-6">
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="panel rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-cyber-cyan font-mono">{data.totalCVEs}</p>
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Total CVEs</p>
+          <p className="text-2xl font-bold text-[#E8531E] font-mono">{data.totalCVEs}</p>
+          <p className="text-xs text-[#8A7A6A] uppercase tracking-wider">Total CVEs</p>
         </div>
         <div className="panel rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-cyber-red font-mono">{data.totalKEV}</p>
-          <p className="text-xs text-gray-400 uppercase tracking-wider">CISA KEV</p>
+          <p className="text-2xl font-bold text-[#E85030] font-mono">{data.totalKEV}</p>
+          <p className="text-xs text-[#8A7A6A] uppercase tracking-wider">CISA KEV</p>
         </div>
         <div className="panel rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-cyber-green font-mono">{data.epssCoverage}</p>
-          <p className="text-xs text-gray-400 uppercase tracking-wider">EPSS Scored</p>
+          <p className="text-2xl font-bold text-[#2EAA7A] font-mono">{data.epssCoverage}</p>
+          <p className="text-xs text-[#8A7A6A] uppercase tracking-wider">EPSS Scored</p>
         </div>
       </div>
 
@@ -96,32 +104,29 @@ export default function TrendAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Daily CVE Trend */}
         <div className="panel rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+          <h3 className="text-sm font-semibold text-[#E0D4C8] mb-4 uppercase tracking-wider">
             14-Day CVE Trend
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={data.dailyTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a2e" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(200, 160, 120, 0.06)" />
               <XAxis
                 dataKey="date"
-                tick={{ fill: "#6b7280", fontSize: 10 }}
+                tick={{ fill: "#8A7A6A", fontSize: 10 }}
                 tickFormatter={(v) => v.slice(5)} // MM-DD
               />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#8A7A6A", fontSize: 10 }} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1a1a2e",
-                  border: "1px solid #2a2a5a",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                }}
+                contentStyle={tooltipStyle}
+                itemStyle={{ color: "#C8B8AA" }}
+                labelStyle={{ color: "#8A7A6A" }}
               />
               <Area
                 type="monotone"
                 dataKey="count"
-                stroke="#06b6d4"
-                fill="#06b6d4"
-                fillOpacity={0.1}
+                stroke="#E8531E"
+                fill="#E8531E"
+                fillOpacity={0.12}
                 strokeWidth={2}
               />
             </AreaChart>
@@ -130,7 +135,7 @@ export default function TrendAnalytics() {
 
         {/* Severity Breakdown */}
         <div className="panel rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+          <h3 className="text-sm font-semibold text-[#E0D4C8] mb-4 uppercase tracking-wider">
             Severity Breakdown
           </h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -149,16 +154,12 @@ export default function TrendAnalytics() {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1a1a2e",
-                  border: "1px solid #2a2a5a",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                }}
+                contentStyle={tooltipStyle}
+                itemStyle={{ color: "#C8B8AA" }}
               />
               <Legend
                 wrapperStyle={{ fontSize: "11px" }}
-                formatter={(value) => <span style={{ color: "#9ca3af" }}>{value}</span>}
+                formatter={(value) => <span style={{ color: "#8A7A6A" }}>{value}</span>}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -166,51 +167,45 @@ export default function TrendAnalytics() {
 
         {/* EPSS Distribution */}
         <div className="panel rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+          <h3 className="text-sm font-semibold text-[#E0D4C8] mb-4 uppercase tracking-wider">
             EPSS Exploit Probability
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={data.epssDistribution}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a2e" />
-              <XAxis dataKey="range" tick={{ fill: "#6b7280", fontSize: 10 }} />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(200, 160, 120, 0.06)" />
+              <XAxis dataKey="range" tick={{ fill: "#8A7A6A", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#8A7A6A", fontSize: 10 }} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1a1a2e",
-                  border: "1px solid #2a2a5a",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                }}
+                contentStyle={tooltipStyle}
+                itemStyle={{ color: "#C8B8AA" }}
+                labelStyle={{ color: "#8A7A6A" }}
               />
-              <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill="#E87030" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Top Vendors */}
         <div className="panel rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+          <h3 className="text-sm font-semibold text-[#E0D4C8] mb-4 uppercase tracking-wider">
             Top Affected Vendors
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={data.topVendors} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a2e" />
-              <XAxis type="number" tick={{ fill: "#6b7280", fontSize: 10 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(200, 160, 120, 0.06)" />
+              <XAxis type="number" tick={{ fill: "#8A7A6A", fontSize: 10 }} />
               <YAxis
                 type="category"
                 dataKey="vendor"
-                tick={{ fill: "#9ca3af", fontSize: 11 }}
+                tick={{ fill: "#C8B8AA", fontSize: 11 }}
                 width={80}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1a1a2e",
-                  border: "1px solid #2a2a5a",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                }}
+                contentStyle={tooltipStyle}
+                itemStyle={{ color: "#C8B8AA" }}
+                labelStyle={{ color: "#8A7A6A" }}
               />
-              <Bar dataKey="count" fill="#06b6d4" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="count" fill="#E8531E" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -219,17 +214,17 @@ export default function TrendAnalytics() {
       {/* Top CWEs - full width */}
       {data.topCWEs.length > 0 && (
         <div className="panel rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+          <h3 className="text-sm font-semibold text-[#E0D4C8] mb-4 uppercase tracking-wider">
             Top Weakness Types (CWE)
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {data.topCWEs.map((cwe) => (
               <div
                 key={cwe.cwe}
-                className="bg-cyber-dark/50 rounded-lg p-3 border border-gray-800"
+                className="bg-[#0F0A08]/50 rounded-lg p-3 border border-[rgba(200,160,120,0.08)]"
               >
-                <p className="text-xs font-mono text-cyber-cyan">{cwe.cwe}</p>
-                <p className="text-lg font-bold text-white">{cwe.count}</p>
+                <p className="text-xs font-mono text-[#E8531E]">{cwe.cwe}</p>
+                <p className="text-lg font-bold text-[#F0E8E0]">{cwe.count}</p>
               </div>
             ))}
           </div>

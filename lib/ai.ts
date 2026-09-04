@@ -41,16 +41,16 @@ const CATEGORY_LABELS: Record<ThreatCategory, string> = {
 };
 
 const CATEGORY_COLORS: Record<ThreatCategory, string> = {
-  ransomware: "bg-red-500/20 text-red-400 border-red-500/30",
-  phishing: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  apt: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  "zero-day": "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  "data-breach": "bg-pink-500/20 text-pink-400 border-pink-500/30",
-  malware: "bg-red-500/20 text-red-400 border-red-500/30",
-  vulnerability: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-  "supply-chain": "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  compliance: "bg-green-500/20 text-green-400 border-green-500/30",
-  general: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+  ransomware: "bg-[#E85030]/20 text-[#F07050] border-[#E85030]/30",
+  phishing: "bg-[#D08040]/20 text-[#F0B880] border-[#D08040]/30",
+  apt: "bg-[#A06040]/20 text-[#C89070] border-[#A06040]/30",
+  "zero-day": "bg-[#E8531E]/20 text-[#F09060] border-[#E8531E]/30",
+  "data-breach": "bg-[#C87A40]/20 text-[#E0A060] border-[#C87A40]/30",
+  malware: "bg-[#E85030]/20 text-[#F07050] border-[#E85030]/30",
+  vulnerability: "bg-[#E87030]/20 text-[#F0A070] border-[#E87030]/30",
+  "supply-chain": "bg-[#D08040]/20 text-[#F0B880] border-[#D08040]/30",
+  compliance: "bg-[#2EAA7A]/20 text-[#60D0A0] border-[#2EAA7A]/30",
+  general: "bg-[#6A5A4A]/20 text-[#8A7A6A] border-[#6A5A4A]/30",
 };
 
 export function getCategoryLabel(cat: ThreatCategory): string {
