@@ -5,6 +5,7 @@ import ThreatMap from "@/components/ThreatMap";
 import NewsFeed from "@/components/NewsFeed";
 import ThreatForecast from "@/components/ThreatForecast";
 import HackerNewsFeed from "@/components/HackerNewsFeed";
+import OsintFeed from "@/components/OsintFeed";
 
 export default function Home() {
   return (
@@ -59,6 +60,7 @@ export default function Home() {
           <div className="space-y-6">
             <ThreatForecast />
             <HackerNewsFeed />
+            <OsintFeed />
           </div>
         </div>
       </main>
@@ -68,7 +70,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-xs text-gray-600 font-mono">
           <p className="text-gray-500">CyberDaily — Cybersecurity Intelligence Dashboard</p>
           <p className="mt-1">
-            Data sources: RSS Feeds • CISA KEV • NVD CVE • abuse.ch • Hacker News
+            Data sources: RSS Feeds • CISA KEV • NVD CVE • abuse.ch • Hacker News • OSINT
           </p>
         </div>
       </footer>
