@@ -1,6 +1,13 @@
-// lib/ai.ts — AI threat summarization via Groq (OpenAI-compatible, Llama 3.3 70B)
+// lib/ai.ts — AI threat summarization via Groq (OpenAI-compatible, free tier)
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
+
+// Groq free-tier models (Aug 2026) — fallback chain for resilience
+const GROQ_MODELS = [
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
+  "qwen/qwen3.6-27b",
+];
 
 export interface AISummary {
   summary: string;
@@ -72,7 +79,7 @@ export async function summarizeArticle(
         Authorization: `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: GROQ_MODELS[0], // gpt-oss-120b (primary)
         messages: [
           {
             role: "system",
