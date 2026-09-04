@@ -13,8 +13,14 @@ export interface CVEItem {
 
 export async function fetchCVELatest(): Promise<CVEItem[]> {
   try {
+    // Fetch CVEs from the last 14 days for better trend analytics
+    const now = new Date();
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const startDate = twoWeeksAgo.toISOString().split(".")[0];
+    const endDate = now.toISOString().split(".")[0];
+
     const response = await fetch(
-      "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=20",
+      `https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=100&pubStartDate=${startDate}&pubEndDate=${endDate}`,
       { next: { revalidate: 3600 } } // 1 hour cache
     );
 
