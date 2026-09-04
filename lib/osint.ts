@@ -1,14 +1,18 @@
 // lib/osint.ts
+import { XMLParser } from "fast-xml-parser";
+
 export interface OsintPost {
   title: string;
   url: string;
-  source: string; // "r/netsec", "r/cybersecurity", "Telegram: Krebs"
+  source: string;
   score: number;
   comments: number;
   timeAgo: string;
   subreddit?: string;
   flair?: string;
 }
+
+const rssParser = new XMLParser({ ignoreAttributes: false });
 
 function timeAgo(dateString: string): string {
   const now = new Date();
@@ -34,69 +38,56 @@ const SUBREDDITS = [
   "hacking",
 ];
 
-function mapPosts(data: any, sub: string): OsintPost[] {
-  return (data.data?.children || []).map((child: any) => {
-    const post = child.data;
-    return {
-      title: post.title,
-      url: post.url?.startsWith("http")
-        ? post.url
-        : `https://reddit.com${post.permalink}`,
-      source: `r/${sub}`,
-      score: post.score || 0,
-      comments: post.num_comments || 0,
-      timeAgo: timeAgo(new Date(post.created_utc * 1000).toISOString()),
-      subreddit: sub,
-      flair: post.link_flair_text || null,
-    };
-  });
-}
-
-async function fetchJson(sub: string, host: string): Promise<Response> {
-  return fetch(`https://${host}/r/${sub}/hot.json?limit=15&raw_json=1`, {
-    headers: {
-      "User-Agent":
-        "CyberDaily/1.0 (Cybersecurity News Aggregator; +https://cyberdaily.pages.dev)",
-    },
-    next: { revalidate: 900 }, // 15 min cache
-  });
-}
-
-async function fetchSubreddit(sub: string): Promise<OsintPost[]> {
+async function fetchSubredditRSS(sub: string): Promise<OsintPost[]> {
   try {
-    let res = await fetchJson(sub, "www.reddit.com");
+    // RSS feeds are more reliable from serverless than JSON API
+    const res = await fetch(`https://www.reddit.com/r/${sub}/.rss?limit=15`, {
+      headers: {
+        "User-Agent": "CyberDaily/1.0 (Cybersecurity News Aggregator)",
+      },
+      next: { revalidate: 900 },
+    });
 
-    // Fallback: www is more reliable from serverless, but try old.reddit.com if blocked
     if (!res.ok) {
-      console.error(
-        `Reddit r/${sub} returned ${res.status}: ${res.statusText} (www.reddit.com)`
-      );
-      res = await fetchJson(sub, "old.reddit.com");
-      if (!res.ok) {
-        console.error(
-          `Reddit r/${sub} returned ${res.status}: ${res.statusText} (old.reddit.com fallback)`
-        );
-        throw new Error(`Reddit ${res.status}`);
-      }
-    }
-
-    const data = await res.json();
-
-    if (!data?.data?.children?.length) {
-      console.warn(`Reddit r/${sub} returned no posts`);
+      console.error(`Reddit RSS r/${sub} returned ${res.status}`);
       return [];
     }
 
-    return mapPosts(data, sub);
+    const xml = await res.text();
+    const doc = rssParser.parse(xml);
+    const entries = doc?.feed?.entry || [];
+    const entriesArray = Array.isArray(entries) ? entries : [entries];
+
+    return entriesArray.map((entry: any) => {
+      const title = entry.title?.["#text"] || entry.title || "Untitled";
+      const link = entry.link?.["@_href"] || entry.link || entry.id || "#";
+      const published = entry.published || entry.updated || new Date().toISOString();
+      const content = entry.content?.["#text"] || entry.content || entry.summary || "";
+      
+      // Extract score and comments from content if available
+      const scoreMatch = content.match(/(\d+)\s*points?/i);
+      const commentsMatch = content.match(/(\d+)\s*comments?/i);
+      
+      return {
+        title: title,
+        url: link,
+        source: `r/${sub}`,
+        score: scoreMatch ? parseInt(scoreMatch[1]) : 0,
+        comments: commentsMatch ? parseInt(commentsMatch[1]) : 0,
+        timeAgo: timeAgo(published),
+        subreddit: sub,
+        flair: undefined,
+      };
+    });
   } catch (error) {
-    console.error(`Error fetching r/${sub}:`, error);
+    console.error(`Error fetching r/${sub} RSS:`, error);
     return [];
   }
 }
 
 export async function fetchOsintFeed(): Promise<OsintPost[]> {
   const results = await Promise.allSettled(
-    SUBREDDITS.map((sub) => fetchSubreddit(sub))
+    SUBREDDITS.map((sub) => fetchSubredditRSS(sub))
   );
 
   const allPosts = results
