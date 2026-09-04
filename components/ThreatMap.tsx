@@ -98,22 +98,28 @@ export default function ThreatMap() {
   const maxCount = clusters[0]?.count ?? 1;
 
   return (
-    <div className="bg-cyber-navy rounded-xl border border-gray-800 overflow-hidden">
-      <div className="p-4 border-b border-gray-800">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-          <span className="w-2 h-2 bg-cyber-red rounded-full animate-pulse" />
-          Global Threat Map
-        </h2>
-        <p className="text-xs text-gray-400 mt-1">
-          Live attack-source activity from abuse.ch URLhaus
-        </p>
+    <div className="panel rounded-xl overflow-hidden h-full flex flex-col map-glow relative">
+      <div className="panel-header p-4 flex items-center justify-between shrink-0">
+        <div>
+          <h2 className="text-lg font-semibold text-white flex items-center gap-3">
+            <span className="w-2 h-2 bg-cyber-red rounded-full animate-pulse shadow-[0_0_10px_rgba(255,71,87,0.8)]" />
+            Global Threat Map
+          </h2>
+          <p className="text-xs text-gray-400 mt-1 font-mono">
+            Live attack-source activity from abuse.ch URLhaus
+          </p>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyber-green animate-pulse" />
+          {clusters.length} source regions
+        </div>
       </div>
-      <div className="relative aspect-[2/1] bg-cyber-dark/50">
+      <div className="relative flex-1 min-h-0 bg-cyber-dark/80 scanlines grid-overlay overflow-hidden">
         <ComposableMap
           projection="geoMercator"
           projectionConfig={{
-            scale: 120,
-            center: [10, 20],
+            scale: 140,
+            center: [10, 25],
           }}
           style={{ width: "100%", height: "100%" }}
         >
@@ -123,16 +129,21 @@ export default function ThreatMap() {
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill="#1a1a2e"
-                  stroke="#33335e"
-                  strokeWidth={0.5}
+                  fill="#13132a"
+                  stroke="#2a2a5a"
+                  strokeWidth={0.6}
+                  style={{
+                    default: { outline: "none" },
+                    hover: { outline: "none", fill: "#1c1c3d" },
+                    pressed: { outline: "none" },
+                  }}
                 />
               ))
             }
           </Geographies>
 
           {clusters.map((cluster, i) => {
-            const radius = 3 + (cluster.count / maxCount) * 7;
+            const radius = 3 + (cluster.count / maxCount) * 8;
             return (
               <Marker
                 key={cluster.country}
@@ -144,51 +155,57 @@ export default function ThreatMap() {
                 <motion.circle
                   r={radius}
                   fill="none"
-                  stroke="#ff6b6b"
+                  stroke="#ff4757"
                   strokeWidth={1.5}
                   initial={{ r: radius, opacity: 0.7 }}
-                  animate={{ r: radius + 14, opacity: 0 }}
+                  animate={{ r: radius + 16, opacity: 0 }}
                   transition={{
-                    duration: 2,
+                    duration: 2.5,
                     repeat: Infinity,
-                    delay: i * 0.25,
+                    delay: i * 0.2,
                     ease: "easeOut",
                   }}
                 />
                 <circle
                   r={radius}
-                  fill="#ff6b6b"
-                  fillOpacity={0.35}
-                  stroke="#ff6b6b"
+                  fill="#ff4757"
+                  fillOpacity={0.25}
+                  stroke="#ff4757"
                   strokeWidth={1}
-                  style={{ cursor: "pointer" }}
+                  style={{
+                    cursor: "pointer",
+                    filter: "drop-shadow(0 0 6px rgba(255,71,87,0.6))",
+                  }}
                 />
-                <circle r={2} fill="#ff6b6b" />
+                <circle r={2} fill="#ff4757" />
               </Marker>
             );
           })}
         </ComposableMap>
 
+        {/* Animated scan line */}
+        <div className="scan-line" />
+
         {/* Hover info chip */}
         {hovered && (
-          <div className="absolute top-3 right-3 bg-cyber-dark/90 border border-cyber-red/40 rounded-lg px-3 py-2 text-xs pointer-events-none">
-            <div className="text-cyber-red font-semibold">
+          <div className="absolute top-4 right-4 bg-cyber-dark/95 border border-cyber-red/40 rounded-lg px-4 py-3 text-xs pointer-events-none shadow-glow-red backdrop-blur-sm z-20">
+            <div className="text-cyber-red font-semibold text-sm font-mono">
               {countryName(hovered.country)}
             </div>
-            <div className="text-gray-300 mt-0.5">
+            <div className="text-gray-300 mt-1 font-mono">
               {hovered.count} active source{hovered.count > 1 ? "s" : ""}
             </div>
-            <div className="text-gray-500 mt-0.5">
+            <div className="text-gray-500 mt-1 max-w-[200px] truncate">
               {hovered.threats.join(", ")}
             </div>
           </div>
         )}
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-cyber-dark/80 rounded-lg p-3 text-xs">
+        <div className="absolute bottom-4 left-4 bg-cyber-dark/80 border border-cyber-cyan/20 rounded-lg p-3 text-xs backdrop-blur-sm z-20">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full border border-cyber-red bg-cyber-red/30" />
-            <span className="text-gray-400">Attack Source (size = activity)</span>
+            <span className="w-3 h-3 rounded-full border border-cyber-red bg-cyber-red/30 shadow-[0_0_8px_rgba(255,71,87,0.5)]" />
+            <span className="text-gray-400 font-mono">Attack Source (size = activity)</span>
           </div>
         </div>
       </div>

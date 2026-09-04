@@ -46,10 +46,50 @@ export default function StatsBar() {
   }, []);
 
   const statItems = [
-    { label: "Attacks Tracked", value: stats.attacksToday, color: "text-cyber-red" },
-    { label: "New CVEs", value: stats.newCVEs, color: "text-yellow-400" },
-    { label: "KEV Additions", value: stats.kevAdditions, color: "text-orange-400" },
-    { label: "Sources", value: stats.sourcesMonitored, color: "text-cyber-green" },
+    {
+      label: "Attacks Tracked",
+      value: stats.attacksToday,
+      color: "text-cyber-red",
+      glow: "glow-text-red",
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      ),
+    },
+    {
+      label: "New CVEs",
+      value: stats.newCVEs,
+      color: "text-cyber-amber",
+      glow: "glow-text-amber",
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      ),
+    },
+    {
+      label: "KEV Additions",
+      value: stats.kevAdditions,
+      color: "text-cyber-amber",
+      glow: "glow-text-amber",
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Sources",
+      value: stats.sourcesMonitored,
+      color: "text-cyber-green",
+      glow: "glow-text-green",
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -57,10 +97,21 @@ export default function StatsBar() {
       {statItems.map((item) => (
         <div
           key={item.label}
-          className="bg-cyber-navy rounded-lg p-4 border border-gray-800"
+          className="panel rounded-lg p-4 flex items-center justify-between group hover:border-cyber-cyan/30 transition-all duration-300"
         >
-          <p className="text-xs text-gray-400 uppercase tracking-wider">{item.label}</p>
-          <p className={`text-2xl font-bold ${item.color} font-mono`}>{item.value}</p>
+          <div>
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium mb-1">
+              {item.label}
+            </p>
+            <p
+              className={`text-2xl font-bold ${item.color} font-mono ${item.glow} group-hover:scale-105 transition-transform duration-300`}
+            >
+              {item.value.toLocaleString()}
+            </p>
+          </div>
+          <div className={`${item.color} opacity-60 group-hover:opacity-100 transition-opacity`}>
+            {item.icon}
+          </div>
         </div>
       ))}
     </div>

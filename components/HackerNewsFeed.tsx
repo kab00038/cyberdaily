@@ -38,9 +38,9 @@ export default function HackerNewsFeed() {
     return (
       <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-cyber-navy rounded-lg p-3 animate-pulse">
-            <div className="h-3 bg-gray-700 rounded w-full mb-2" />
-            <div className="h-2 bg-gray-700 rounded w-1/3" />
+          <div key={i} className="panel rounded-lg p-3 animate-pulse">
+            <div className="h-3 bg-gray-700/50 rounded w-full mb-2" />
+            <div className="h-2 bg-gray-700/50 rounded w-1/3" />
           </div>
         ))}
       </div>
@@ -48,26 +48,32 @@ export default function HackerNewsFeed() {
   }
 
   return (
-    <div className="bg-cyber-navy rounded-lg border border-gray-800">
-      <div className="p-4 border-b border-gray-800">
+    <div className="panel rounded-lg overflow-hidden">
+      <div className="panel-header p-4">
         <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-          <span className="text-orange-400">🔶</span>
+          <svg className="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2L2 22h20L12 2zm0 3.5L18.5 20H5.5L12 5.5z" />
+          </svg>
           Hacker News — Cybersecurity
         </h3>
       </div>
-      <div className="divide-y divide-gray-800">
+      <div className="divide-y divide-cyber-cyan/5">
         {stories.slice(0, 10).map((story, i) => (
           <a
             key={`${story.url}-${i}`}
             href={story.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block p-4 hover:bg-cyber-dark/50 transition-colors"
+            className="block p-4 hover:bg-cyber-dark/50 transition-all duration-200 group"
           >
-            <p className="text-sm text-white line-clamp-2 mb-2">{story.title}</p>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <span className="text-orange-400">▲</span>
+            <p className="text-sm text-white line-clamp-2 mb-2 group-hover:text-cyber-cyan transition-colors">
+              {story.title}
+            </p>
+            <div className="flex items-center gap-3 text-[10px] text-gray-500 font-mono uppercase tracking-wider">
+              <span className="flex items-center gap-1 text-orange-400">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4l-8 16h16L12 4z" />
+                </svg>
                 {story.points}
               </span>
               <span>{story.comments} comments</span>
