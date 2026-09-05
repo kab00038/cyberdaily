@@ -16,43 +16,36 @@ interface NewsItem {
   urgency?: string;
 }
 
-const SOURCE_STYLES: Record<string, { border: string; badge: string; glow: string }> = {
+const SOURCE_STYLES: Record<string, { border: string; badge: string }> = {
   BleepingComputer: {
-    border: "border-[#C87A40]",
-    badge: "bg-[#C87A40]/15 text-[#E0A060] border-[#C87A40]/30",
-    glow: "hover:shadow-[0_0_20px_rgba(200,122,64,0.15)]",
+    border: "border-emerald-500",
+    badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   },
   "The Hacker News": {
-    border: "border-[#A06040]",
-    badge: "bg-[#A06040]/15 text-[#C89070] border-[#A06040]/30",
-    glow: "hover:shadow-[0_0_20px_rgba(160,96,64,0.15)]",
+    border: "border-cyan-500",
+    badge: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
   },
   "Krebs on Security": {
-    border: "border-[#2EAA7A]",
-    badge: "bg-[#2EAA7A]/15 text-[#60D0A0] border-[#2EAA7A]/30",
-    glow: "hover:shadow-[0_0_20px_rgba(46,170,122,0.15)]",
+    border: "border-violet-500",
+    badge: "bg-violet-500/15 text-violet-400 border-violet-500/30",
   },
   "Dark Reading": {
-    border: "border-[#E8531E]",
-    badge: "bg-[#E8531E]/15 text-[#F09060] border-[#E8531E]/30",
-    glow: "hover:shadow-[0_0_20px_rgba(232,83,30,0.15)]",
+    border: "border-red-500",
+    badge: "bg-red-500/15 text-red-400 border-red-500/30",
   },
   SecurityWeek: {
-    border: "border-[#E87030]",
-    badge: "bg-[#E87030]/15 text-[#F0A070] border-[#E87030]/30",
-    glow: "hover:shadow-[0_0_20px_rgba(232,112,48,0.15)]",
+    border: "border-amber-500",
+    badge: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   },
   "The Record": {
-    border: "border-[#D08040]",
-    badge: "bg-[#D08040]/15 text-[#F0B880] border-[#D08040]/30",
-    glow: "hover:shadow-[0_0_20px_rgba(208,128,64,0.15)]",
+    border: "border-sky-500",
+    badge: "bg-sky-500/15 text-sky-400 border-sky-500/30",
   },
 };
 
 const DEFAULT_STYLE = {
-  border: "border-[#6A5A4A]",
-  badge: "bg-[#6A5A4A]/15 text-[#8A7A6A] border-[#6A5A4A]/30",
-  glow: "hover:shadow-[0_0_20px_rgba(106,90,74,0.1)]",
+  border: "border-gray-600",
+  badge: "bg-gray-600/15 text-gray-400 border-gray-600/30",
 };
 
 function timeAgo(dateString: string): string {
@@ -98,8 +91,8 @@ export default function NewsFeed() {
       <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="panel rounded-lg p-4 animate-pulse">
-            <div className="h-4 bg-[rgba(200,160,120,0.12)] rounded w-3/4 mb-2" />
-            <div className="h-3 bg-[rgba(200,160,120,0.12)] rounded w-1/2" />
+            <div className="h-4 bg-white/[0.08] rounded w-3/4 mb-2" />
+            <div className="h-3 bg-white/[0.08] rounded w-1/2" />
           </div>
         ))}
       </div>
@@ -111,7 +104,6 @@ export default function NewsFeed() {
     ...new Set(news.map((n) => n.category).filter((c): c is string => Boolean(c))),
   ];
 
-  // Filter news by selected category
   const filteredNews =
     selectedCategory === "all"
       ? news
@@ -127,8 +119,8 @@ export default function NewsFeed() {
             onClick={() => setSelectedCategory(cat)}
             className={`text-[10px] px-2 py-1 rounded border transition-colors ${
               selectedCategory === cat
-                ? "bg-[#E8531E]/20 text-[#E8531E] border-[#E8531E]/40"
-                : "bg-[#0F0A08]/50 text-[#8A7A6A] border-[rgba(200,160,120,0.12)] hover:border-[#8A7A6A]/50"
+                ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/40"
+                : "bg-[#0B0F0E]/50 text-gray-500 border-white/[0.08] hover:border-gray-500"
             }`}
           >
             {cat === "all" ? "All" : getCategoryLabel(cat as ThreatCategory)}
@@ -144,14 +136,14 @@ export default function NewsFeed() {
             href={item.link}
             target="_blank"
             rel="noopener noreferrer"
-            className={`block panel rounded-lg p-4 border-l-4 ${style.border} ${style.glow} hover:bg-[#0F0A08]/60 transition-all duration-300 group`}
+            className={`block panel rounded-lg p-4 border-l-4 ${style.border} hover:bg-[#0B0F0E]/60 transition-all duration-300 group`}
           >
             <div className="flex items-start gap-3">
               {item.thumbnail && (
                 <img
                   src={item.thumbnail}
                   alt=""
-                  className="w-16 h-16 object-cover rounded flex-shrink-0 border border-[rgba(200,160,120,0.1)]"
+                  className="w-16 h-16 object-cover rounded flex-shrink-0 border border-white/[0.06]"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = "none";
                   }}
@@ -159,7 +151,6 @@ export default function NewsFeed() {
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  {/* Category badge */}
                   {item.category && item.category !== "general" && (
                     <span
                       className={`text-[9px] px-1.5 py-0.5 rounded border ${getCategoryColor(item.category as ThreatCategory)} font-medium uppercase tracking-wider`}
@@ -167,27 +158,25 @@ export default function NewsFeed() {
                       {getCategoryLabel(item.category as ThreatCategory)}
                     </span>
                   )}
-                  {/* Urgency dot */}
                   {item.urgency && (
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        item.urgency === "critical" ? "bg-[#E85030]" :
-                        item.urgency === "high" ? "bg-[#E8531E]" :
-                        item.urgency === "medium" ? "bg-[#D08040]" :
-                        "bg-[#2EAA7A]"
+                        item.urgency === "critical" ? "bg-red-500" :
+                        item.urgency === "high" ? "bg-orange-500" :
+                        item.urgency === "medium" ? "bg-amber-500" :
+                        "bg-emerald-500"
                       }`}
                     />
                   )}
                 </div>
-                <h3 className="text-sm font-semibold text-[#F0E8E0] line-clamp-2 mb-1 group-hover:text-[#E8531E] transition-colors">
+                <h3 className="text-sm font-semibold text-gray-100 line-clamp-2 mb-1 group-hover:text-emerald-400 transition-colors">
                   {item.title}
                 </h3>
-                {/* AI summary or fallback to snippet */}
-                <p className="text-xs text-[#BFB0A0] line-clamp-2 mb-3 leading-relaxed">
+                <p className="text-xs text-gray-400 line-clamp-2 mb-3 leading-relaxed">
                   {item.aiSummary || item.snippet}
                 </p>
                 {item.aiSummary && (
-                  <span className="text-[9px] text-[#E8531E]/60 font-mono">AI</span>
+                  <span className="text-[9px] text-emerald-500/70 font-mono">AI</span>
                 )}
                 <div className="flex items-center gap-3">
                   <span
@@ -195,7 +184,7 @@ export default function NewsFeed() {
                   >
                     {item.source}
                   </span>
-                  <span className="text-[10px] text-[#8A7A6A] font-mono">
+                  <span className="text-[10px] text-gray-500 font-mono">
                     {timeAgo(item.pubDate)}
                   </span>
                 </div>
@@ -208,7 +197,7 @@ export default function NewsFeed() {
       {visibleCount < filteredNews.length && (
         <button
           onClick={() => setVisibleCount((prev) => prev + 10)}
-          className="w-full py-3 text-xs font-mono uppercase tracking-widest text-[#E8531E] border border-[#E8531E]/20 rounded-lg hover:bg-[#E8531E]/10 hover:border-[#E8531E]/40 transition-all duration-300"
+          className="w-full py-3 text-xs font-mono uppercase tracking-widest text-emerald-500 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300"
         >
           Load more intelligence
         </button>

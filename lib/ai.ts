@@ -41,16 +41,16 @@ const CATEGORY_LABELS: Record<ThreatCategory, string> = {
 };
 
 const CATEGORY_COLORS: Record<ThreatCategory, string> = {
-  ransomware: "bg-[#E85030]/20 text-[#F07050] border-[#E85030]/30",
-  phishing: "bg-[#D08040]/20 text-[#F0B880] border-[#D08040]/30",
-  apt: "bg-[#A06040]/20 text-[#C89070] border-[#A06040]/30",
-  "zero-day": "bg-[#E8531E]/20 text-[#F09060] border-[#E8531E]/30",
-  "data-breach": "bg-[#C87A40]/20 text-[#E0A060] border-[#C87A40]/30",
-  malware: "bg-[#E85030]/20 text-[#F07050] border-[#E85030]/30",
-  vulnerability: "bg-[#E87030]/20 text-[#F0A070] border-[#E87030]/30",
-  "supply-chain": "bg-[#D08040]/20 text-[#F0B880] border-[#D08040]/30",
-  compliance: "bg-[#2EAA7A]/20 text-[#60D0A0] border-[#2EAA7A]/30",
-  general: "bg-[#6A5A4A]/20 text-[#8A7A6A] border-[#6A5A4A]/30",
+  ransomware: "bg-red-500/15 text-red-400 border-red-500/30",
+  phishing: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  apt: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  "zero-day": "bg-orange-500/15 text-orange-400 border-orange-500/30",
+  "data-breach": "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  malware: "bg-red-500/15 text-red-400 border-red-500/30",
+  vulnerability: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  "supply-chain": "bg-sky-500/15 text-sky-400 border-sky-500/30",
+  compliance: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  general: "bg-gray-600/15 text-gray-400 border-gray-600/30",
 };
 
 export function getCategoryLabel(cat: ThreatCategory): string {
@@ -79,7 +79,7 @@ export async function summarizeArticle(
         Authorization: `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: GROQ_MODELS[0], // gpt-oss-120b (primary)
+        model: GROQ_MODELS[0],
         messages: [
           {
             role: "system",
@@ -135,10 +135,8 @@ Provide your analysis as JSON.`,
 
     if (!content) return null;
 
-    // Parse JSON response
     const parsed = JSON.parse(content);
 
-    // Validate
     const validCategories: ThreatCategory[] = [
       "ransomware", "phishing", "apt", "zero-day", "data-breach",
       "malware", "vulnerability", "supply-chain", "compliance", "general",
@@ -156,21 +154,18 @@ Provide your analysis as JSON.`,
   }
 }
 
-// Batch summarize with rate limiting (stay within Groq's free tier)
 export async function summarizeBatch(
   articles: { title: string; snippet: string; source: string }[],
   maxBatch: number = 10
 ): Promise<Map<number, AISummary>> {
   const results = new Map<number, AISummary>();
 
-  // Process in small batches to respect rate limits
   for (let i = 0; i < Math.min(articles.length, maxBatch); i++) {
     const article = articles[i];
     const summary = await summarizeArticle(article.title, article.snippet, article.source);
     if (summary) {
       results.set(i, summary);
     }
-    // Small delay between requests
     if (i < articles.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, 200));
     }

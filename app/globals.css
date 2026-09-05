@@ -5,9 +5,9 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 body {
-  background: #0F0A08;
+  background: #0B0F0E;
   min-height: 100vh;
-  color: #C8B8AA;
+  color: #D1D5DB;
   font-family: 'DM Sans', system-ui, sans-serif;
 }
 
@@ -19,70 +19,57 @@ body {
   font-family: 'Space Grotesk', system-ui, sans-serif;
 }
 
-/* Ambient orange haze overlay */
+/* Ambient emerald glow — sits behind the content area only */
 .ambient-glow {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 70% 50%, rgba(200, 80, 20, 0.12), transparent 70%);
+  background: radial-gradient(ellipse at 60% 50%, rgba(16, 185, 129, 0.08), transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* CyFocus glass-morphism panel system */
+/* Glass-morphism panel system — no box shadows */
 .panel {
-  background: rgba(25, 18, 12, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(200, 160, 120, 0.08);
+  background: rgba(18, 25, 22, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
 .panel:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
-  border-color: rgba(200, 160, 120, 0.12);
+  border-color: rgba(255, 255, 255, 0.10);
 }
 
 .panel-header {
-  background: linear-gradient(90deg, rgba(232, 83, 30, 0.06) 0%, transparent 60%);
-  border-bottom: 1px solid rgba(200, 160, 120, 0.08);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Warm text glows */
+/* Accent text glows */
 .glow-text-green {
-  text-shadow: 0 0 10px rgba(46, 170, 122, 0.5), 0 0 20px rgba(46, 170, 122, 0.3);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
 }
 
 .glow-text-red {
-  text-shadow: 0 0 10px rgba(232, 80, 48, 0.5), 0 0 20px rgba(232, 80, 48, 0.3);
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
 .glow-text-cyan {
-  text-shadow: 0 0 10px rgba(232, 83, 30, 0.5), 0 0 20px rgba(232, 83, 30, 0.3);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
 }
 
 .glow-text-amber {
-  text-shadow: 0 0 10px rgba(232, 112, 48, 0.5), 0 0 20px rgba(232, 112, 48, 0.3);
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3);
 }
 
 .glow-text-purple {
-  text-shadow: 0 0 10px rgba(200, 122, 64, 0.5), 0 0 20px rgba(200, 122, 64, 0.3);
+  text-shadow: 0 0 10px rgba(209, 213, 219, 0.4), 0 0 20px rgba(209, 213, 219, 0.2);
 }
 
-.glow-text-orange {
-  text-shadow: 0 0 10px rgba(232, 83, 30, 0.55), 0 0 24px rgba(232, 83, 30, 0.35);
-}
-
-/* Map effects */
-.map-glow {
-  box-shadow:
-    inset 0 0 80px rgba(0, 0, 0, 0.8),
-    0 0 40px rgba(232, 83, 30, 0.08),
-    0 0 80px rgba(200, 80, 20, 0.06);
-}
-
+/* Subtle map atmosphere */
 .scanlines::before {
   content: "";
   position: absolute;
@@ -91,8 +78,8 @@ body {
     to bottom,
     transparent,
     transparent 2px,
-    rgba(232, 83, 30, 0.03) 2px,
-    rgba(232, 83, 30, 0.03) 4px
+    rgba(16, 185, 129, 0.03) 2px,
+    rgba(16, 185, 129, 0.03) 4px
   );
   pointer-events: none;
   z-index: 10;
@@ -103,8 +90,8 @@ body {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(200, 160, 120, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(200, 160, 120, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 5;
@@ -116,7 +103,7 @@ body {
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(232, 83, 30, 0.06) 50%,
+    rgba(16, 185, 129, 0.06) 50%,
     transparent 100%
   );
   height: 40%;
@@ -142,16 +129,16 @@ main {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0F0A08;
+  background: #0B0F0E;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #E8531E;
+  background: #10B981;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #E87030;
+  background: #059669;
 }
 
 /* Noise texture overlay (subtle) */
@@ -160,7 +147,7 @@ main {
   position: fixed;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.035;
+  opacity: 0.03;
   pointer-events: none;
   z-index: 1;
 }

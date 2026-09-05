@@ -37,10 +37,7 @@ export default function Home() {
   }, [activeSection]);
 
   return (
-    <div className="min-h-screen font-sans relative">
-      {/* Ambient warm haze */}
-      <div className="ambient-glow" aria-hidden="true" />
-
+    <div className="min-h-screen font-sans relative bg-[#0B0F0E]">
       <Sidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
@@ -55,23 +52,26 @@ export default function Home() {
           sidebarCollapsed ? "md:ml-16" : "md:ml-56"
         } ml-0`}
       >
+        {/* Ambient emerald glow behind content only */}
+        <div className="ambient-glow" aria-hidden="true" />
+
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-[#0F0A08]/80 backdrop-blur-md border-b border-[rgba(200,160,120,0.08)]">
-          <div className="px-4 sm:px-6 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-[#0B0F0E]/80 backdrop-blur-md border-b border-white/[0.06]">
+          <div className="px-4 sm:px-6 py-4 flex items-center justify-between relative z-10">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setMobileOpen((prev) => !prev)}
-                className="md:hidden p-2 rounded-lg hover:bg-[rgba(200,160,120,0.08)] text-[#8A7A6A] hover:text-[#F0E8E0] transition-colors"
+                className="md:hidden p-2 rounded-lg hover:bg-white/[0.06] text-gray-500 hover:text-gray-200 transition-colors"
                 aria-label="Toggle navigation"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <h1 className="text-lg font-semibold text-[#F0E8E0] capitalize font-display">{pageTitle}</h1>
+              <h1 className="text-lg font-semibold text-white capitalize font-display">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-[#8A7A6A] font-mono">
+              <span className="text-xs text-gray-500 font-mono">
                 {now.toLocaleTimeString("en-US", { timeZone: "UTC", hour12: false })} UTC
               </span>
             </div>
@@ -79,7 +79,7 @@ export default function Home() {
         </header>
 
         {/* Content */}
-        <div className="p-4 sm:p-6">{sections[activeSection]}</div>
+        <div className="relative z-10 p-4 sm:p-6">{sections[activeSection]}</div>
       </main>
     </div>
   );

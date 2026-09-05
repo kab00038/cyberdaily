@@ -62,8 +62,6 @@ export default function ThreatMap() {
     return () => clearInterval(interval);
   }, []);
 
-  // Cluster real attack sources by country (URLhaus provides no destinations,
-  // so the map shows where attacks originate — nothing is fabricated).
   const clusters = useMemo<CountryCluster[]>(() => {
     const byCountry: Record<
       string,
@@ -98,23 +96,23 @@ export default function ThreatMap() {
   const maxCount = clusters[0]?.count ?? 1;
 
   return (
-    <div className="panel rounded-xl overflow-hidden h-full flex flex-col map-glow relative">
+    <div className="panel rounded-xl overflow-hidden h-full flex flex-col relative">
       <div className="panel-header p-4 flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-lg font-semibold text-[#F0E8E0] flex items-center gap-3 font-display">
-            <span className="w-2 h-2 bg-[#E8531E] rounded-full animate-pulse shadow-[0_0_10px_rgba(232,83,30,0.8)]" />
+          <h2 className="text-lg font-semibold text-white flex items-center gap-3 font-display">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             Global Threat Map
           </h2>
-          <p className="text-xs text-[#8A7A6A] mt-1 font-mono">
+          <p className="text-xs text-gray-500 mt-1 font-mono">
             Live attack-source activity from abuse.ch URLhaus
           </p>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-[#8A7A6A] font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#2EAA7A] animate-pulse" />
+        <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           {clusters.length} source regions
         </div>
       </div>
-      <div className="relative flex-1 min-h-0 bg-[#0F0A08]/80 scanlines grid-overlay overflow-hidden">
+      <div className="relative flex-1 min-h-0 bg-[#0B0F0E]/80 scanlines grid-overlay overflow-hidden">
         <ComposableMap
           projection="geoMercator"
           projectionConfig={{
@@ -129,12 +127,12 @@ export default function ThreatMap() {
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill="#2A2018"
-                  stroke="#3A3028"
+                  fill="#1F2937"
+                  stroke="#374151"
                   strokeWidth={0.6}
                   style={{
                     default: { outline: "none" },
-                    hover: { outline: "none", fill: "#3A3028" },
+                    hover: { outline: "none", fill: "#374151" },
                     pressed: { outline: "none" },
                   }}
                 />
@@ -151,11 +149,10 @@ export default function ThreatMap() {
                 onMouseEnter={() => setHovered(cluster)}
                 onMouseLeave={() => setHovered(null)}
               >
-                {/* Expanding pulse ring */}
                 <motion.circle
                   r={radius}
                   fill="none"
-                  stroke="#E8531E"
+                  stroke="#EF4444"
                   strokeWidth={1.5}
                   initial={{ r: radius, opacity: 0.7 }}
                   animate={{ r: radius + 16, opacity: 0 }}
@@ -168,44 +165,40 @@ export default function ThreatMap() {
                 />
                 <circle
                   r={radius}
-                  fill="#E8531E"
+                  fill="#EF4444"
                   fillOpacity={0.18}
-                  stroke="#E8531E"
+                  stroke="#EF4444"
                   strokeWidth={1}
-                  style={{
-                    cursor: "pointer",
-                    filter: "drop-shadow(0 0 8px rgba(232,83,30,0.5))",
-                  }}
+                  style={{ cursor: "pointer" }}
                 />
-                <circle r={2} fill="#E8531E" />
+                <circle r={2} fill="#EF4444" />
               </Marker>
             );
           })}
         </ComposableMap>
 
-        {/* Animated scan line */}
         <div className="scan-line" />
 
         {/* Hover info chip */}
         {hovered && (
-          <div className="absolute top-4 right-4 bg-[#120E0B]/95 border border-[#E8531E]/40 rounded-lg px-4 py-3 text-xs pointer-events-none shadow-[0_0_20px_rgba(232,83,30,0.2)] backdrop-blur-sm z-20">
-            <div className="text-[#E8531E] font-semibold text-sm font-mono">
+          <div className="absolute top-4 right-4 panel px-4 py-3 text-xs pointer-events-none z-20">
+            <div className="text-red-400 font-semibold text-sm font-mono">
               {countryName(hovered.country)}
             </div>
-            <div className="text-[#C8B8AA] mt-1 font-mono">
+            <div className="text-gray-300 mt-1 font-mono">
               {hovered.count} active source{hovered.count > 1 ? "s" : ""}
             </div>
-            <div className="text-[#8A7A6A] mt-1 max-w-[200px] truncate">
+            <div className="text-gray-500 mt-1 max-w-[200px] truncate">
               {hovered.threats.join(", ")}
             </div>
           </div>
         )}
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-[#120E0B]/80 border border-[rgba(200,160,120,0.12)] rounded-lg p-3 text-xs backdrop-blur-sm z-20">
+        <div className="absolute bottom-4 left-4 panel p-3 text-xs z-20">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full border border-[#E8531E] bg-[#E8531E]/30 shadow-[0_0_8px_rgba(232,83,30,0.5)]" />
-            <span className="text-[#8A7A6A] font-mono">Attack Source (size = activity)</span>
+            <span className="w-3 h-3 rounded-full border border-red-500 bg-red-500/30" />
+            <span className="text-gray-500 font-mono">Attack Source (size = activity)</span>
           </div>
         </div>
       </div>
