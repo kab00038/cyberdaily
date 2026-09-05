@@ -9,7 +9,7 @@ import {
 
 interface TrendData {
   severityBreakdown: Record<string, number>;
-  epssDistribution: { range: string; count: number }[];
+  attackVectors: Record<string, number>;
   riskBreakdown: Record<string, number>;
   dailyTrend: { date: string; count: number }[];
   topCWEs: { cwe: string; count: number }[];
@@ -28,6 +28,20 @@ const COLORS = {
 };
 
 const PIE_COLORS = ["#EF4444", "#F97316", "#F59E0B", "#10B981", "#6B7280"];
+
+const ATTACK_VECTOR_COLORS: Record<string, string> = {
+  NETWORK: "#EF4444",
+  LOCAL: "#F97316",
+  ADJACENT: "#F59E0B",
+  PHYSICAL: "#10B981",
+};
+
+const ATTACK_VECTOR_LABELS: Record<string, string> = {
+  NETWORK: "Network",
+  LOCAL: "Local",
+  ADJACENT: "Adjacent",
+  PHYSICAL: "Physical",
+};
 
 export default function TrendAnalytics() {
   const [data, setData] = useState<TrendData | null>(null);
@@ -72,6 +86,12 @@ export default function TrendAnalytics() {
   const riskData = Object.entries(data.riskBreakdown).map(([name, value]) => ({
     name,
     value,
+  }));
+
+  const attackVectorData = ["NETWORK", "LOCAL", "ADJACENT", "PHYSICAL"].map((key) => ({
+    key,
+    name: ATTACK_VECTOR_LABELS[key],
+    value: data.attackVectors?.[key] || 0,
   }));
 
   const tooltipStyle = {
@@ -165,22 +185,31 @@ export default function TrendAnalytics() {
           </ResponsiveContainer>
         </div>
 
-        {/* EPSS Distribution */}
+        {/* Attack Vector */}
         <div className="panel rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-200 mb-4 uppercase tracking-wider">
-            EPSS Exploit Probability
+            Attack Vector
           </h3>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data.epssDistribution}>
+            <BarChart data={attackVectorData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
-              <XAxis dataKey="range" tick={{ fill: "#6B7280", fontSize: 10 }} />
-              <YAxis tick={{ fill: "#6B7280", fontSize: 10 }} />
+              <XAxis type="number" tick={{ fill: "#6B7280", fontSize: 10 }} />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={{ fill: "#D1D5DB", fontSize: 11 }}
+                width={70}
+              />
               <Tooltip
                 contentStyle={tooltipStyle}
                 itemStyle={{ color: "#D1D5DB" }}
                 labelStyle={{ color: "#6B7280" }}
               />
-              <Bar dataKey="count" fill="#10B981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {attackVectorData.map((entry) => (
+                  <Cell key={entry.key} fill={ATTACK_VECTOR_COLORS[entry.key] || "#6B7280"} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

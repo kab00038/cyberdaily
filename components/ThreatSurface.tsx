@@ -34,6 +34,37 @@ const TYPE_COLORS: Record<string, string> = {
 
 const COUNTRY_COLORS = ["#10B981", "#06B6D4", "#8B5CF6", "#F59E0B", "#F43F5E", "#6B7280"];
 
+const AXES = ["Malware", "Phishing", "DDoS", "Brute Force", "Botnet", "Scanning"];
+
+const THREAT_AXIS_MAP: Record<string, number> = {
+  "SSH Brute-Force": 3,
+  "Login Brute-Force": 3,
+  "FTP Brute-Force": 3,
+  "Email Spam/Abuse": 1,
+  "Web Attack (DDoS/SQLi)": 0, // malware + DDoS
+  "VoIP/SIP Attack": 4,
+  "Botnet Activity": 4,
+  "IRC Bot": 4,
+  "Aggressive Scanner": 5,
+};
+
+function hexagonPoints(radius: number): string {
+  return AXES.map((_, i) => {
+    const angle = (360 / 6) * i - 90;
+    const rad = (angle * Math.PI) / 180;
+    return `${150 + radius * Math.cos(rad)},${150 + radius * Math.sin(rad)}`;
+  }).join(" ");
+}
+
+function dataPolygonPoints(values: number[]): string {
+  return values.map((v, i) => {
+    const angle = (360 / 6) * i - 90;
+    const rad = (angle * Math.PI) / 180;
+    const r = v * 120;
+    return `${150 + r * Math.cos(rad)},${150 + r * Math.sin(rad)}`;
+  }).join(" ");
+}
+
 function getThreatLevel(count: number): { label: string; color: string; percentage: number } {
   if (count >= 30) return { label: "Critical", color: "#EF4444", percentage: 100 };
   if (count >= 20) return { label: "High", color: "#F97316", percentage: 75 };
@@ -63,7 +94,7 @@ export default function ThreatSurface() {
     return () => clearInterval(interval);
   }, []);
 
-  const { typeData, countryData, threatLevel, uniqueCountries } = useMemo(() => {
+  const { typeData, countryData, threatLevel, uniqueCountries, axisValues } = useMemo(() => {
     const typeCounts: Record<string, number> = {};
     const countryCounts: Record<string, number> = {};
 
@@ -74,6 +105,15 @@ export default function ThreatSurface() {
       const country = t.sourceCountry || "Unknown";
       countryCounts[country] = (countryCounts[country] || 0) + 1;
     }
+
+    // Radar axis values: map threat types to the 6 attack-profile axes
+    const axisCounts = [0, 0, 0, 0, 0, 0];
+    for (const t of threats) {
+      const axisIdx = THREAT_AXIS_MAP[t.threatType] ?? 0;
+      axisCounts[axisIdx]++;
+    }
+    const maxCount = Math.max(...axisCounts, 1);
+    const axisValues = axisCounts.map((c) => c / maxCount);
 
     const typeData = Object.entries(typeCounts)
       .map(([name, count]) => ({ name, count }))
@@ -90,6 +130,7 @@ export default function ThreatSurface() {
       countryData,
       threatLevel: getThreatLevel(threats.length),
       uniqueCountries: Object.keys(countryCounts).length,
+      axisValues,
     };
   }, [threats]);
 
@@ -224,6 +265,59 @@ export default function ThreatSurface() {
               <span className="text-emerald-500 font-mono font-semibold">{uniqueCountries}</span> countries tracked
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Hexagon radar chart */}
+      <div className="mt-5 pt-5 border-t border-white/[0.06]">
+        <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-4">Attack Profile</h3>
+        <div className="flex justify-center">
+          <svg viewBox="0 0 300 300" className="w-full max-w-[320px]">
+            {/* 5 concentric hexagonal rings */}
+            {[0.2, 0.4, 0.6, 0.8, 1.0].map((scale, i) => (
+              <polygon
+                key={i}
+                points={hexagonPoints(120 * scale)}
+                fill="none"
+                stroke="rgba(255,255,255,0.08)"
+                strokeWidth="1"
+              />
+            ))}
+
+            {/* 6 axis spokes */}
+            {AXES.map((_, i) => {
+              const angle = (360 / 6) * i - 90;
+              const rad = (angle * Math.PI) / 180;
+              const x = 150 + 120 * Math.cos(rad);
+              const y = 150 + 120 * Math.sin(rad);
+              return (
+                <line key={i} x1={150} y1={150} x2={x} y2={y}
+                  stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+              );
+            })}
+
+            {/* Data polygon */}
+            <polygon
+              points={dataPolygonPoints(axisValues)}
+              fill="rgba(16, 185, 129, 0.2)"
+              stroke="#10B981"
+              strokeWidth="2"
+            />
+
+            {/* Axis labels */}
+            {AXES.map((label, i) => {
+              const angle = (360 / 6) * i - 90;
+              const rad = (angle * Math.PI) / 180;
+              const x = 150 + 140 * Math.cos(rad);
+              const y = 150 + 140 * Math.sin(rad);
+              return (
+                <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle"
+                  fill="#9CA3AF" fontSize="10" fontFamily="Inter, sans-serif">
+                  {label}
+                </text>
+              );
+            })}
+          </svg>
         </div>
       </div>
     </div>

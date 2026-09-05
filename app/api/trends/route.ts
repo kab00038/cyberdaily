@@ -47,6 +47,21 @@ export async function GET() {
       else epssDistribution[4].count++;
     }
 
+    // Attack vector breakdown (inferred from CVE descriptions)
+    const attackVectors = { NETWORK: 0, LOCAL: 0, PHYSICAL: 0, ADJACENT: 0 };
+    for (const cve of cveList) {
+      const desc = cve.description?.toLowerCase() || "";
+      if (desc.includes("remote") || desc.includes("network") || desc.includes("rce")) {
+        attackVectors.NETWORK++;
+      } else if (desc.includes("local") || desc.includes("privilege escalation")) {
+        attackVectors.LOCAL++;
+      } else if (desc.includes("physical")) {
+        attackVectors.PHYSICAL++;
+      } else {
+        attackVectors.ADJACENT++;
+      }
+    }
+
     // Risk level breakdown (using CVSS as proxy since we have it)
     const riskBreakdown = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
     for (const cve of cveList) {
@@ -107,6 +122,7 @@ export async function GET() {
       {
         severityBreakdown,
         epssDistribution,
+        attackVectors,
         riskBreakdown,
         dailyTrend,
         topCWEs,
