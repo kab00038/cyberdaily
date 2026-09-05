@@ -85,21 +85,26 @@ export async function fetchThreatMapData(): Promise<ThreatMapEntry[]> {
       })
     );
 
-    // Collect IPs with their attack categories
-    const ipCategories = new Map<string, string>();
+    // Collect IPs by category, balanced sampling
+    const categoryMap = new Map<string, string[]>();
     for (const result of results) {
       if (result.status !== "fulfilled") continue;
       const { category, ips } = result.value;
-      for (const ip of ips) {
-        // First category wins if IP appears in multiple lists
-        if (!ipCategories.has(ip)) {
-          ipCategories.set(ip, category);
-        }
+      if (ips.length > 0) {
+        categoryMap.set(category, ips);
       }
     }
 
-    // Sample up to 50 unique IPs across categories
-    const sampled = Array.from(ipCategories.entries()).slice(0, 50);
+    // Sample evenly across categories (6 IPs per category = ~54 total)
+    const sampled: [string, string][] = [];
+    const perCategory = 6;
+    for (const [category, ips] of categoryMap) {
+      // Randomly sample from each category
+      const shuffled = [...ips].sort(() => Math.random() - 0.5);
+      for (const ip of shuffled.slice(0, perCategory)) {
+        sampled.push([ip, category]);
+      }
+    }
 
     // Resolve to coordinates via ip-api.com
     const geos = await Promise.all(
