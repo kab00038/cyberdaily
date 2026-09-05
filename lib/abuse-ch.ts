@@ -53,52 +53,71 @@ export interface ThreatMapEntry {
   firstSeen: string;
 }
 
+// blocklist.de attack categories with human-readable labels
+const BLOCKLIST_CATEGORIES = [
+  { list: "ssh", label: "SSH Brute-Force" },
+  { list: "mail", label: "Email Spam/Abuse" },
+  { list: "apache", label: "Web Attack (DDoS/SQLi)" },
+  { list: "ftp", label: "FTP Brute-Force" },
+  { list: "sip", label: "VoIP/SIP Attack" },
+  { list: "bots", label: "Botnet Activity" },
+  { list: "bruteforcelogin", label: "Login Brute-Force" },
+  { list: "ircbot", label: "IRC Bot" },
+  { list: "strongips", label: "Aggressive Scanner" },
+];
+
 export async function fetchThreatMapData(): Promise<ThreatMapEntry[]> {
   try {
-    const response = await fetch(
-      "https://urlhaus.abuse.ch/downloads/json_recent/",
-      { next: { revalidate: 300 } } // 5 min cache
+    // Fetch from multiple blocklist.de categories in parallel
+    const results = await Promise.allSettled(
+      BLOCKLIST_CATEGORIES.map(async (cat) => {
+        const res = await fetch(
+          `https://lists.blocklist.de/lists/${cat.list}.txt`,
+          { next: { revalidate: 300 } }
+        );
+        if (!res.ok) return { category: cat.label, ips: [] as string[] };
+        const text = await res.text();
+        const ips = text
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line && !line.startsWith("#") && line.includes("."));
+        return { category: cat.label, ips };
+      })
     );
 
-    if (!response.ok) throw new Error(`abuse.ch API error: ${response.status}`);
-
-    const data: unknown = await response.json();
-    // Current URLhaus format: { "<id>": [ { url, threat, dateadded, ... }, ... ], ... }
-    const raw = Object.values(asRecord(data) ?? {}).flatMap((v) => asArray(v));
-
-    // Resolve hosts to coordinates via ip-api (batch of 40 stays under 45 req/min)
-    const candidates: { host: string; threat: string; firstSeen: string }[] = [];
-    for (const item of raw) {
-      if (candidates.length >= 40) break;
-      const rec = asRecord(item);
-      const url = asString(rec?.url);
-      if (!url) continue;
-      let host: string;
-      try {
-        host = new URL(url).hostname;
-      } catch {
-        continue;
+    // Collect IPs with their attack categories
+    const ipCategories = new Map<string, string>();
+    for (const result of results) {
+      if (result.status !== "fulfilled") continue;
+      const { category, ips } = result.value;
+      for (const ip of ips) {
+        // First category wins if IP appears in multiple lists
+        if (!ipCategories.has(ip)) {
+          ipCategories.set(ip, category);
+        }
       }
-      candidates.push({
-        host,
-        threat: asString(rec?.threat, "malware"),
-        firstSeen: asString(rec?.dateadded, new Date().toISOString()),
-      });
     }
 
-    const geos = await Promise.all(candidates.map((c) => lookupIP(c.host)));
+    // Sample up to 50 unique IPs across categories
+    const sampled = Array.from(ipCategories.entries()).slice(0, 50);
+
+    // Resolve to coordinates via ip-api.com
+    const geos = await Promise.all(
+      sampled.map(([ip]) => lookupIP(ip))
+    );
+
     const entries: ThreatMapEntry[] = [];
-    for (let i = 0; i < candidates.length; i++) {
+    for (let i = 0; i < sampled.length; i++) {
       const geo = geos[i];
       if (!geo) continue;
       entries.push({
-        sourceIP: candidates[i].host,
+        sourceIP: sampled[i][0],
         sourceCountry: geo.country,
         sourceLat: geo.lat,
         sourceLng: geo.lng,
-        destinationCountry: "US",
-        threatType: candidates[i].threat,
-        firstSeen: candidates[i].firstSeen,
+        destinationCountry: "Global",
+        threatType: sampled[i][1],
+        firstSeen: new Date().toISOString(),
       });
     }
 
