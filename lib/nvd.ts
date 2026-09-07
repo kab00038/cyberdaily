@@ -6,12 +6,48 @@ export interface CVEItem {
   description: string;
   cvssScore: number | null;
   severity: string | null;
-  published: string;
+  publishedAt: string | null;
   lastModified: string;
   references: string[];
+  attackVector: string | null;
+  cweIds: string[];
 }
 
-export async function fetchCVELatest(): Promise<CVEItem[]> {
+export interface NVDResult {
+  items: CVEItem[];
+  totalResults: number | null;
+  resultsPerPage: number;
+  startIndex: number;
+  completeness: "complete" | "partial" | "unknown";
+  fetchedAt: string;
+  error: string | null;
+}
+
+/**
+ * Normalize an NVD attack vector value into the short form.
+ * ADJACENT_NETWORK becomes ADJACENT; NETWORK/LOCAL/PHYSICAL/UNKNOWN are kept.
+ * Unknown or missing values yield null.
+ */
+function normalizeAttackVector(value: string | null): string | null {
+  if (!value) return null;
+  switch (value) {
+    case "NETWORK":
+      return "NETWORK";
+    case "ADJACENT_NETWORK":
+      return "ADJACENT";
+    case "LOCAL":
+      return "LOCAL";
+    case "PHYSICAL":
+      return "PHYSICAL";
+    case "UNKNOWN":
+      return "UNKNOWN";
+    default:
+      return null;
+  }
+}
+
+export async function fetchCVELatest(): Promise<NVDResult> {
+  const fetchedAt = new Date().toISOString();
   try {
     // Fetch CVEs from the last 14 days for better trend analytics
     const now = new Date();
@@ -27,26 +63,78 @@ export async function fetchCVELatest(): Promise<CVEItem[]> {
     if (!response.ok) throw new Error("NVD API error");
 
     const data: unknown = await response.json();
-    return asArray(asRecord(data)?.vulnerabilities).map((entry) => {
+    const record = asRecord(data) ?? {};
+
+    const items = asArray(record.vulnerabilities).map((entry) => {
       const cve = asRecord(asRecord(entry)?.cve) ?? {};
-      const cvssData = asRecord(
-        asRecord(asArray(asRecord(cve.metrics)?.cvssMetricV31)[0])?.cvssData
-      );
+
+      // Prefer cvssMetricV31; fall back to cvssMetricV40 when v3.1 is absent.
+      const metrics = asRecord(cve.metrics) ?? {};
+      const v31 = asRecord(asArray(metrics.cvssMetricV31)[0]);
+      const v40 = asRecord(asArray(metrics.cvssMetricV40)[0]);
+      const source = v31 ?? v40;
+      const cvssData = asRecord(source?.cvssData);
+
       const description = asRecord(asArray(cve.descriptions)[0])?.value;
+
+      const attackVector = normalizeAttackVector(
+        asString(cvssData?.attackVector) || null
+      );
+
+      const cweIds = asArray(cve.weaknesses)
+        .map((w) => {
+          const desc = asRecord(asArray(asRecord(w)?.description)[0]);
+          return asString(desc?.value);
+        })
+        .filter((id) => id !== "");
+
       return {
         id: asString(cve.id),
         description: asString(description, "No description"),
         cvssScore: typeof cvssData?.baseScore === "number" ? cvssData.baseScore : null,
         severity: asString(cvssData?.baseSeverity) || null,
-        published: asString(cve.published),
+        publishedAt: asString(cve.published) || null,
         lastModified: asString(cve.lastModified),
         references: asArray(cve.references)
           .map((r) => asString(asRecord(r)?.url))
           .filter((url) => url !== ""),
+        attackVector,
+        cweIds,
       };
     });
+
+    const totalResults =
+      typeof record.totalResults === "number" ? record.totalResults : null;
+    const resultsPerPage =
+      typeof record.resultsPerPage === "number" ? record.resultsPerPage : 100;
+    const startIndex =
+      typeof record.startIndex === "number" ? record.startIndex : 0;
+
+    const completeness: "complete" | "partial" =
+      totalResults === null || items.length >= totalResults
+        ? "complete"
+        : "partial";
+
+    return {
+      items,
+      totalResults,
+      resultsPerPage,
+      startIndex,
+      completeness,
+      fetchedAt,
+      error: null,
+    };
   } catch (error) {
     console.error("Error fetching CVEs:", error);
-    return [];
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      items: [],
+      totalResults: null,
+      resultsPerPage: 100,
+      startIndex: 0,
+      completeness: "unknown",
+      fetchedAt,
+      error: message,
+    };
   }
 }

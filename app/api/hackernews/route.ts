@@ -6,8 +6,16 @@ export const runtime = "edge";
 
 export async function GET() {
   try {
-    const stories = await fetchHackerNewsStories();
-    return NextResponse.json(stories, {
+    const stories = await fetchHackerNewsStories("latest", { days: 7 });
+    const items = stories.map((story) => ({
+      title: story.title,
+      url: story.url,
+      points: story.points,
+      comments: story.comments,
+      publishedAt: story.publishedAt,
+      hnUrl: story.hnUrl,
+    }));
+    return NextResponse.json(items, {
       headers: {
         "Cache-Control": "public, s-maxage=900, stale-while-revalidate=450",
       },

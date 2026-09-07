@@ -21,56 +21,12 @@ interface ThreatMapEntry {
   sourceLng: number;
   destinationCountry: string;
   threatType: string;
-  firstSeen: string;
+  observedAt: string;
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  malware: "#EF4444",
-  phishing: "#F97316",
-  botnet: "#F59E0B",
-  spam: "#84CC16",
-  default: "#6B7280",
-};
+const ACCENT = "#64DFA6";
 
-const COUNTRY_COLORS = ["#10B981", "#06B6D4", "#8B5CF6", "#F59E0B", "#F43F5E", "#6B7280"];
-
-const AXES = ["Malware", "Phishing", "DDoS", "Brute Force", "Botnet", "Scanning"];
-
-const THREAT_AXIS_MAP: Record<string, number> = {
-  "SSH Brute-Force": 3,
-  "Login Brute-Force": 3,
-  "FTP Brute-Force": 3,
-  "Email Spam/Abuse": 1,
-  "Web Attack (DDoS/SQLi)": 0, // malware + DDoS
-  "VoIP/SIP Attack": 4,
-  "Botnet Activity": 4,
-  "IRC Bot": 4,
-  "Aggressive Scanner": 5,
-};
-
-function hexagonPoints(radius: number): string {
-  return AXES.map((_, i) => {
-    const angle = (360 / 6) * i - 90;
-    const rad = (angle * Math.PI) / 180;
-    return `${150 + radius * Math.cos(rad)},${150 + radius * Math.sin(rad)}`;
-  }).join(" ");
-}
-
-function dataPolygonPoints(values: number[]): string {
-  return values.map((v, i) => {
-    const angle = (360 / 6) * i - 90;
-    const rad = (angle * Math.PI) / 180;
-    const r = v * 120;
-    return `${150 + r * Math.cos(rad)},${150 + r * Math.sin(rad)}`;
-  }).join(" ");
-}
-
-function getThreatLevel(count: number): { label: string; color: string; percentage: number } {
-  if (count >= 30) return { label: "Critical", color: "#EF4444", percentage: 100 };
-  if (count >= 20) return { label: "High", color: "#F97316", percentage: 75 };
-  if (count >= 10) return { label: "Elevated", color: "#F59E0B", percentage: 50 };
-  return { label: "Low", color: "#10B981", percentage: 25 };
-}
+const COUNTRY_COLORS = ["#9CA3AF", "#6B7280", "#4B5563", "#D1D5DB", "#374151"];
 
 export default function ThreatSurface() {
   const [threats, setThreats] = useState<ThreatMapEntry[]>([]);
@@ -94,7 +50,7 @@ export default function ThreatSurface() {
     return () => clearInterval(interval);
   }, []);
 
-  const { typeData, countryData, threatLevel, uniqueCountries, axisValues } = useMemo(() => {
+  const { typeData, countryData, uniqueCountries, categoryCount } = useMemo(() => {
     const typeCounts: Record<string, number> = {};
     const countryCounts: Record<string, number> = {};
 
@@ -105,15 +61,6 @@ export default function ThreatSurface() {
       const country = t.sourceCountry || "Unknown";
       countryCounts[country] = (countryCounts[country] || 0) + 1;
     }
-
-    // Radar axis values: map threat types to the 6 attack-profile axes
-    const axisCounts = [0, 0, 0, 0, 0, 0];
-    for (const t of threats) {
-      const axisIdx = THREAT_AXIS_MAP[t.threatType] ?? 0;
-      axisCounts[axisIdx]++;
-    }
-    const maxCount = Math.max(...axisCounts, 1);
-    const axisValues = axisCounts.map((c) => c / maxCount);
 
     const typeData = Object.entries(typeCounts)
       .map(([name, count]) => ({ name, count }))
@@ -128,9 +75,8 @@ export default function ThreatSurface() {
     return {
       typeData,
       countryData,
-      threatLevel: getThreatLevel(threats.length),
       uniqueCountries: Object.keys(countryCounts).length,
-      axisValues,
+      categoryCount: Object.keys(typeCounts).length,
     };
   }, [threats]);
 
@@ -144,13 +90,24 @@ export default function ThreatSurface() {
 
   if (loading) {
     return (
-      <div className="panel p-5 animate-pulse">
-        <div className="h-4 bg-white/[0.08] rounded w-1/3 mb-4" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-40 bg-white/[0.04] rounded-xl" />
-          <div className="h-40 bg-white/[0.04] rounded-xl" />
-          <div className="h-40 bg-white/[0.04] rounded-xl" />
+      <div className="panel p-5">
+        <div className="h-4 bg-white/[0.08] rounded w-1/3 mb-4 animate-pulse" />
+        <p className="text-xs text-gray-500 font-mono">Loading sample…</p>
+      </div>
+    );
+  }
+
+  if (threats.length === 0) {
+    return (
+      <div className="panel p-5">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-sm font-semibold text-white uppercase tracking-widest">
+            Reported IP distribution
+          </h2>
         </div>
+        <p className="text-sm text-gray-400 font-mono">
+          No sampled records available. The blocklist.de feed may be temporarily unreachable.
+        </p>
       </div>
     );
   }
@@ -162,18 +119,18 @@ export default function ThreatSurface() {
           <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
-          Threat Surface Map
+          Reported IP distribution
         </h2>
         <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          {threats.length} active samples
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          {threats.length} sampled records
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Threat type distribution */}
         <div>
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Threat Types</h3>
+          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Categories in sample</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={typeData} layout="vertical" margin={{ left: 0, right: 20 }}>
@@ -191,9 +148,9 @@ export default function ThreatSurface() {
                   itemStyle={{ color: "#D1D5DB" }}
                   cursor={{ fill: "rgba(255, 255, 255, 0.04)" }}
                 />
-                <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+                <Bar dataKey="count" radius={[0, 6, 6, 0]} fill={ACCENT}>
                   {typeData.map((entry) => (
-                    <Cell key={entry.name} fill={TYPE_COLORS[entry.name.toLowerCase()] || TYPE_COLORS.default} />
+                    <Cell key={entry.name} fill={ACCENT} />
                   ))}
                 </Bar>
               </BarChart>
@@ -201,42 +158,31 @@ export default function ThreatSurface() {
           </div>
         </div>
 
-        {/* Threat level gauge */}
-        <div className="flex flex-col items-center justify-center">
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3 self-start">Threat Level</h3>
-          <div className="relative w-40 h-40">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
-              <circle
-                cx="50"
-                cy="50"
-                r="42"
-                fill="none"
-                stroke={threatLevel.color}
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeDasharray={`${threatLevel.percentage * 2.64} 264`}
-                className="transition-all duration-1000 ease-out"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold font-mono" style={{ color: threatLevel.color }}>
-                {threats.length}
-              </span>
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider">Active</span>
-            </div>
+        {/* Descriptive stats */}
+        <div className="flex flex-col justify-center gap-5">
+          <div>
+            <p className="text-3xl font-bold text-white font-display">{threats.length}</p>
+            <p className="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">
+              Unique sampled IPs
+            </p>
           </div>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: threatLevel.color }} />
-            <span className="text-sm font-semibold" style={{ color: threatLevel.color }}>
-              {threatLevel.label}
-            </span>
+          <div>
+            <p className="text-3xl font-bold text-white font-display">{categoryCount}</p>
+            <p className="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">
+              Categories represented
+            </p>
+          </div>
+          <div>
+            <p className="text-3xl font-bold text-white font-display">{uniqueCountries}</p>
+            <p className="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">
+              Source countries
+            </p>
           </div>
         </div>
 
         {/* Top source countries */}
         <div>
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Top Source Regions</h3>
+          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Countries in sample</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -244,8 +190,8 @@ export default function ThreatSurface() {
                   data={countryData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={45}
-                  outerRadius={70}
+                  innerRadius={30}
+                  outerRadius={55}
                   paddingAngle={3}
                   dataKey="count"
                 >
@@ -262,62 +208,9 @@ export default function ThreatSurface() {
           </div>
           <div className="text-center -mt-2">
             <p className="text-xs text-gray-500">
-              <span className="text-emerald-500 font-mono font-semibold">{uniqueCountries}</span> countries tracked
+              <span className="text-emerald-500 font-mono font-semibold">{uniqueCountries}</span> countries in sample
             </p>
           </div>
-        </div>
-      </div>
-
-      {/* Hexagon radar chart */}
-      <div className="mt-5 pt-5 border-t border-white/[0.06]">
-        <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-4">Attack Profile</h3>
-        <div className="flex justify-center">
-          <svg viewBox="0 0 300 300" className="w-full max-w-[320px]">
-            {/* 5 concentric hexagonal rings */}
-            {[0.2, 0.4, 0.6, 0.8, 1.0].map((scale, i) => (
-              <polygon
-                key={i}
-                points={hexagonPoints(120 * scale)}
-                fill="none"
-                stroke="rgba(255,255,255,0.08)"
-                strokeWidth="1"
-              />
-            ))}
-
-            {/* 6 axis spokes */}
-            {AXES.map((_, i) => {
-              const angle = (360 / 6) * i - 90;
-              const rad = (angle * Math.PI) / 180;
-              const x = 150 + 120 * Math.cos(rad);
-              const y = 150 + 120 * Math.sin(rad);
-              return (
-                <line key={i} x1={150} y1={150} x2={x} y2={y}
-                  stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-              );
-            })}
-
-            {/* Data polygon */}
-            <polygon
-              points={dataPolygonPoints(axisValues)}
-              fill="rgba(16, 185, 129, 0.2)"
-              stroke="#10B981"
-              strokeWidth="2"
-            />
-
-            {/* Axis labels */}
-            {AXES.map((label, i) => {
-              const angle = (360 / 6) * i - 90;
-              const rad = (angle * Math.PI) / 180;
-              const x = 150 + 140 * Math.cos(rad);
-              const y = 150 + 140 * Math.sin(rad);
-              return (
-                <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle"
-                  fill="#9CA3AF" fontSize="10" fontFamily="Inter, sans-serif">
-                  {label}
-                </text>
-              );
-            })}
-          </svg>
         </div>
       </div>
     </div>

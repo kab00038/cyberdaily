@@ -95,7 +95,7 @@ export default function Sidebar({
           border-r border-white/[0.06]
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
-          ${collapsed ? "md:w-20" : "md:w-60"}
+          ${collapsed ? "md:w-20" : "md:w-[15rem]"}
           w-60
         `}
       >
@@ -137,6 +137,8 @@ export default function Sidebar({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
+                aria-label={item.label}
+                title={item.label}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden ${
                   isActive
                     ? "text-white"
@@ -150,9 +152,9 @@ export default function Sidebar({
                 <span className={`relative flex-shrink-0 transition-colors ${isActive ? "text-emerald-500" : "group-hover:text-emerald-500"}`}>
                   {item.icon}
                 </span>
-                {!collapsed && (
-                  <span className="relative text-sm font-medium">{item.label}</span>
-                )}
+                <span className={`relative text-sm font-medium ${collapsed ? "sr-only" : ""}`}>
+                  {item.label}
+                </span>
               </button>
             );
           })}
@@ -163,7 +165,7 @@ export default function Sidebar({
           {!collapsed && (
             <div className="panel p-3 flex items-center gap-3">
               <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
               </span>
               <div>

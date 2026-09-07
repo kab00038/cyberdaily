@@ -3,17 +3,18 @@
 
 import { useEffect, useState } from "react";
 import { getCategoryColor, getCategoryLabel, ThreatCategory } from "@/lib/ai";
+import { formatPublishedAt } from "@/lib/format";
 
 interface NewsItem {
   title: string;
   link: string;
   snippet: string;
   source: string;
-  pubDate: string;
+  pubDate: string | null;
   thumbnail?: string;
   aiSummary?: string | null;
-  category?: string;
-  urgency?: string;
+  category?: string | null;
+  urgency?: string | null;
 }
 
 const SOURCE_STYLES: Record<string, { border: string; badge: string }> = {
@@ -47,20 +48,6 @@ const DEFAULT_STYLE = {
   border: "border-gray-600",
   badge: "bg-gray-600/15 text-gray-400 border-gray-600/30",
 };
-
-function timeAgo(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
 export default function NewsFeed() {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -158,7 +145,7 @@ export default function NewsFeed() {
                       {getCategoryLabel(item.category as ThreatCategory)}
                     </span>
                   )}
-                  {item.urgency && (
+                  {typeof item.urgency === "string" && item.urgency && (
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
                         item.urgency === "critical" ? "bg-red-500" :
@@ -185,7 +172,7 @@ export default function NewsFeed() {
                     {item.source}
                   </span>
                   <span className="text-[10px] text-gray-500 font-mono">
-                    {timeAgo(item.pubDate)}
+                    {formatPublishedAt(item.pubDate)}
                   </span>
                 </div>
               </div>

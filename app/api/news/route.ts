@@ -9,8 +9,8 @@ export async function GET() {
   try {
     const news = await fetchRSSFeeds();
 
-    // AI summarize top 15 articles (respects Groq free tier)
-    const summaries = await summarizeBatch(
+    // Fire AI enrichment in parallel; do NOT block the response on the full batch.
+    const summariesPromise = summarizeBatch(
       news.slice(0, 15).map((n) => ({
         title: n.title,
         snippet: n.snippet,
@@ -18,14 +18,25 @@ export async function GET() {
       }))
     );
 
-    // Merge summaries into news items
+    // Wait at most 8 seconds for the in-flight batch. If it isn't done, we
+    // fall back to whatever has been enriched (null defaults for the rest).
+    let summaries = new Map<number, AISummary>();
+    await Promise.race([
+      summariesPromise.then((map) => {
+        summaries = map;
+        return true;
+      }),
+      new Promise<false>((resolve) => setTimeout(() => resolve(false), 8000)),
+    ]);
+
+    // Merge summaries into news items. Missing AI values default to null.
     const enrichedNews = news.map((item, i) => {
       const ai: AISummary | undefined = summaries.get(i);
       return {
         ...item,
-        aiSummary: ai?.summary || null,
-        category: ai?.category || "general",
-        urgency: ai?.urgency || "medium",
+        aiSummary: ai?.summary ?? null,
+        category: ai?.category ?? null,
+        urgency: ai?.urgency ?? null,
       };
     });
 

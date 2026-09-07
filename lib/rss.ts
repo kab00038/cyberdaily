@@ -7,7 +7,11 @@ export interface NewsItem {
   link: string;
   snippet: string;
   source: string;
-  pubDate: string;
+  /**
+   * RFC-3339 publication date string. `null` when the feed does not
+   * supply a usable timestamp — never synthesized to "now".
+   */
+  pubDate: string | null;
   thumbnail?: string;
 }
 
@@ -79,11 +83,14 @@ async function fetchSingleFeed(feed: { url: string; name: string }): Promise<New
     const items = asArray(channel?.item ?? channel?.entry);
     return items.map((entry) => {
       const item = asRecord(entry) ?? {};
-      let pubDate = new Date().toISOString();
+      let pubDate: string | null = null;
       for (const key of ["pubDate", "published", "updated", "dc:date"]) {
         const value = item[key];
-        if (typeof value === "string") {
-          pubDate = value;
+        if (typeof value === "string" && value.trim() !== "") {
+          const parsed = Date.parse(value);
+          if (Number.isFinite(parsed)) {
+            pubDate = new Date(parsed).toISOString();
+          }
           break;
         }
       }
@@ -113,7 +120,14 @@ export async function fetchRSSFeeds(): Promise<NewsItem[]> {
     .filter((r): r is PromiseFulfilledResult<NewsItem[]> => r.status === "fulfilled")
     .flatMap((r) => r.value);
 
-  return allItems.sort(
-    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-  );
+  return allItems.sort((a, b) => {
+    const aTs = a.pubDate ? Date.parse(a.pubDate) : NaN;
+    const bTs = b.pubDate ? Date.parse(b.pubDate) : NaN;
+    const aValid = Number.isFinite(aTs);
+    const bValid = Number.isFinite(bTs);
+    if (aValid && !bValid) return -1;
+    if (!aValid && bValid) return 1;
+    if (!aValid && !bValid) return 0;
+    return (bTs as number) - (aTs as number);
+  });
 }

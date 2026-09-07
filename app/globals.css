@@ -38,7 +38,8 @@ body {
   transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
-.panel:hover {
+/* Hover lift is reserved for interactive panels; static panels stay calm. */
+.panel.interactive:hover {
   transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.10);
 }
@@ -46,6 +47,13 @@ body {
 .panel-header {
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid #64DFA6;
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 /* Accent text glows */
@@ -107,7 +115,6 @@ body {
     transparent 100%
   );
   height: 40%;
-  animation: scan 6s linear infinite;
   pointer-events: none;
   z-index: 15;
 }

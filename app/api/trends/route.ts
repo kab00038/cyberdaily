@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { fetchCVELatest } from "@/lib/nvd";
 import { fetchEPSSScores } from "@/lib/epss";
-import { fetchKEVData } from "@/lib/abuse-ch";
+import { fetchKEVCatalog } from "@/lib/abuse-ch";
 
 export const runtime = "edge";
 
@@ -10,14 +10,14 @@ export async function GET() {
   try {
     const [cves, kev] = await Promise.allSettled([
       fetchCVELatest(),
-      fetchKEVData(),
+      fetchKEVCatalog(),
     ]);
 
-    const cveList = cves.status === "fulfilled" ? cves.value : [];
-    const kevList = kev.status === "fulfilled" ? kev.value : [];
+    const cveResult = cves.status === "fulfilled" ? cves.value : null;
+    const cveList = cveResult?.items ?? [];
+    const fullCatalog = kev.status === "fulfilled" ? kev.value : [];
     const cveIds = cveList.map((c) => c.id);
     const epssScores = await fetchEPSSScores(cveIds);
-    const kevSet = new Set(kevList.map((k) => k.cveID));
 
     // Severity breakdown
     const severityBreakdown = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, UNKNOWN: 0 };
@@ -47,18 +47,14 @@ export async function GET() {
       else epssDistribution[4].count++;
     }
 
-    // Attack vector breakdown (inferred from CVE descriptions)
-    const attackVectors = { NETWORK: 0, LOCAL: 0, PHYSICAL: 0, ADJACENT: 0 };
+    // Attack vector breakdown (from structured CVSS in NVD; null → UNKNOWN)
+    const attackVectors = { NETWORK: 0, ADJACENT: 0, LOCAL: 0, PHYSICAL: 0, UNKNOWN: 0 };
     for (const cve of cveList) {
-      const desc = cve.description?.toLowerCase() || "";
-      if (desc.includes("remote") || desc.includes("network") || desc.includes("rce")) {
-        attackVectors.NETWORK++;
-      } else if (desc.includes("local") || desc.includes("privilege escalation")) {
-        attackVectors.LOCAL++;
-      } else if (desc.includes("physical")) {
-        attackVectors.PHYSICAL++;
+      const av = cve.attackVector || "UNKNOWN";
+      if (av in attackVectors) {
+        attackVectors[av as keyof typeof attackVectors]++;
       } else {
-        attackVectors.ADJACENT++;
+        attackVectors.UNKNOWN++;
       }
     }
 
@@ -79,18 +75,15 @@ export async function GET() {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split("T")[0];
-      const count = cveList.filter((c) => c.published?.startsWith(dateStr)).length;
+      const count = cveList.filter((c) => c.publishedAt?.startsWith(dateStr)).length;
       dailyTrend.push({ date: dateStr, count });
     }
 
-    // Top CWEs (extract from CVE descriptions — look for CWE patterns)
+    // Top CWEs (from structured cweIds parsed from NVD)
     const cweCounts: Record<string, number> = {};
     for (const cve of cveList) {
-      const cweMatch = cve.description.match(/CWE-\d+/g);
-      if (cweMatch) {
-        for (const cwe of cweMatch) {
-          cweCounts[cwe] = (cweCounts[cwe] || 0) + 1;
-        }
+      for (const cwe of cve.cweIds) {
+        cweCounts[cwe] = (cweCounts[cwe] || 0) + 1;
       }
     }
     const topCWEs = Object.entries(cweCounts)
@@ -98,7 +91,7 @@ export async function GET() {
       .slice(0, 8)
       .map(([cwe, count]) => ({ cwe, count }));
 
-    // Top vendors (extract from descriptions)
+    // Vendor mentions in descriptions (best-effort keyword matching)
     const vendorKeywords = [
       "Microsoft", "Google", "Apple", "Adobe", "Mozilla", "Linux", "Cisco",
       "VMware", "Oracle", "SAP", "Intel", "AMD", "NVIDIA", "Qualcomm",
@@ -113,10 +106,24 @@ export async function GET() {
         }
       }
     }
-    const topVendors = Object.entries(vendorCounts)
+    const vendorMentions = Object.entries(vendorCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 8)
       .map(([vendor, count]) => ({ vendor, count }));
+
+    // Derive completeness from the NVDResult.
+    const nvdError = cveResult?.error ?? null;
+    let completeness: "complete" | "partial" | "unknown" = "unknown";
+    if (nvdError !== null) {
+      completeness = "unknown";
+    } else if (
+      cveResult?.totalResults === null ||
+      cveList.length < (cveResult?.totalResults ?? 0)
+    ) {
+      completeness = "partial";
+    } else {
+      completeness = "complete";
+    }
 
     return NextResponse.json(
       {
@@ -126,10 +133,12 @@ export async function GET() {
         riskBreakdown,
         dailyTrend,
         topCWEs,
-        topVendors,
+        vendorMentions,
         totalCVEs: cveList.length,
-        totalKEV: kevList.length,
+        totalKEV: fullCatalog.length,
         epssCoverage: epssScores.size,
+        completeness,
+        nvdError,
       },
       {
         headers: {

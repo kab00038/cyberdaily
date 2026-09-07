@@ -13,7 +13,7 @@ interface TrendData {
   riskBreakdown: Record<string, number>;
   dailyTrend: { date: string; count: number }[];
   topCWEs: { cwe: string; count: number }[];
-  topVendors: { vendor: string; count: number }[];
+  vendorMentions: { vendor: string; count: number }[];
   totalCVEs: number;
   totalKEV: number;
   epssCoverage: number;
@@ -34,6 +34,7 @@ const ATTACK_VECTOR_COLORS: Record<string, string> = {
   LOCAL: "#F97316",
   ADJACENT: "#F59E0B",
   PHYSICAL: "#10B981",
+  UNKNOWN: "#6B7280",
 };
 
 const ATTACK_VECTOR_LABELS: Record<string, string> = {
@@ -41,6 +42,7 @@ const ATTACK_VECTOR_LABELS: Record<string, string> = {
   LOCAL: "Local",
   ADJACENT: "Adjacent",
   PHYSICAL: "Physical",
+  UNKNOWN: "Unknown",
 };
 
 export default function TrendAnalytics() {
@@ -83,12 +85,7 @@ export default function TrendAnalytics() {
     value,
   }));
 
-  const riskData = Object.entries(data.riskBreakdown).map(([name, value]) => ({
-    name,
-    value,
-  }));
-
-  const attackVectorData = ["NETWORK", "LOCAL", "ADJACENT", "PHYSICAL"].map((key) => ({
+  const attackVectorData = ["NETWORK", "LOCAL", "ADJACENT", "PHYSICAL", "UNKNOWN"].map((key) => ({
     key,
     name: ATTACK_VECTOR_LABELS[key],
     value: data.attackVectors?.[key] || 0,
@@ -217,10 +214,10 @@ export default function TrendAnalytics() {
         {/* Top Vendors */}
         <div className="panel rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-200 mb-4 uppercase tracking-wider">
-            Top Affected Vendors
+            Vendor mentions in descriptions
           </h3>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data.topVendors} layout="vertical">
+            <BarChart data={data.vendorMentions} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
               <XAxis type="number" tick={{ fill: "#6B7280", fontSize: 10 }} />
               <YAxis

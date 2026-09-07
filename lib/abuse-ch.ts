@@ -1,4 +1,13 @@
-// lib/abuse-ch.ts — CISA KEV + abuse.ch URLhaus threat map
+// lib/abuse-ch.ts — CISA KEV catalog + blocklist.de threat map data.
+//
+// Important: `fetchKEVCatalog()` returns the FULL normalized catalog so
+// consumers can perform membership lookups against every known exploited
+// vulnerability. Slicing to a "recent" subset must happen in the consumer.
+//
+// The blocklist.de fetcher samples up to N IPs per category and resolves
+// geolocation via lib/geoip. The returned field is `observedAt` (the time
+// this snapshot was assembled), NOT `firstSeen` — we have no first-seen
+// data from the upstream feed.
 import { lookupIP } from "./geoip";
 import { asArray, asRecord, asString } from "./parse";
 
@@ -13,14 +22,20 @@ export interface KEVItem {
   dueDate: string;
 }
 
-export async function fetchKEVData(): Promise<KEVItem[]> {
+/**
+ * Returns the full KEV catalog, sorted by dateAdded descending.
+ *
+ * The endpoint is cached for one hour. Callers that only need a "recent"
+ * subset should slice the result after building a lookup map.
+ */
+export async function fetchKEVCatalog(): Promise<KEVItem[]> {
   try {
     const response = await fetch(
       "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
-      { next: { revalidate: 3600 } } // 1 hour cache
+      { next: { revalidate: 3600 } }
     );
 
-    if (!response.ok) throw new Error("CISA KEV API error");
+    if (!response.ok) throw new Error(`CISA KEV API error ${response.status}`);
 
     const data: unknown = await response.json();
     return asArray(asRecord(data)?.vulnerabilities)
@@ -35,10 +50,13 @@ export async function fetchKEVData(): Promise<KEVItem[]> {
         requiredAction: asString(v.requiredAction),
         dueDate: asString(v.dueDate),
       }))
-      .sort((a, b) => (Date.parse(b.dateAdded) || 0) - (Date.parse(a.dateAdded) || 0))
-      .slice(0, 10);
+      .filter((entry) => entry.cveID !== "")
+      .sort(
+        (a, b) =>
+          (Date.parse(b.dateAdded) || 0) - (Date.parse(a.dateAdded) || 0)
+      );
   } catch (error) {
-    console.error("Error fetching KEV data:", error);
+    console.error("Error fetching KEV catalog:", error);
     return [];
   }
 }
@@ -50,10 +68,14 @@ export interface ThreatMapEntry {
   sourceLng: number;
   destinationCountry: string;
   threatType: string;
-  firstSeen: string;
+  /**
+   * When this snapshot of the data was assembled. Renamed from
+   * `firstSeen` to be truthful: the upstream feed does not provide
+   * first-seen timestamps for blocklist.de entries.
+   */
+  observedAt: string;
 }
 
-// blocklist.de attack categories with human-readable labels
 const BLOCKLIST_CATEGORIES = [
   { list: "ssh", label: "SSH Brute-Force" },
   { list: "mail", label: "Email Spam/Abuse" },
@@ -66,9 +88,10 @@ const BLOCKLIST_CATEGORIES = [
   { list: "strongips", label: "Aggressive Scanner" },
 ];
 
-export async function fetchThreatMapData(): Promise<ThreatMapEntry[]> {
+export async function fetchThreatMapData(
+  perCategory: number = 6
+): Promise<ThreatMapEntry[]> {
   try {
-    // Fetch from multiple blocklist.de categories in parallel
     const results = await Promise.allSettled(
       BLOCKLIST_CATEGORIES.map(async (cat) => {
         const res = await fetch(
@@ -85,7 +108,6 @@ export async function fetchThreatMapData(): Promise<ThreatMapEntry[]> {
       })
     );
 
-    // Collect IPs by category, balanced sampling
     const categoryMap = new Map<string, string[]>();
     for (const result of results) {
       if (result.status !== "fulfilled") continue;
@@ -95,23 +117,18 @@ export async function fetchThreatMapData(): Promise<ThreatMapEntry[]> {
       }
     }
 
-    // Sample evenly across categories (6 IPs per category = ~54 total)
     const sampled: [string, string][] = [];
-    const perCategory = 6;
     for (const [category, ips] of categoryMap) {
-      // Randomly sample from each category
       const shuffled = [...ips].sort(() => Math.random() - 0.5);
       for (const ip of shuffled.slice(0, perCategory)) {
         sampled.push([ip, category]);
       }
     }
 
-    // Resolve to coordinates via ip-api.com
-    const geos = await Promise.all(
-      sampled.map(([ip]) => lookupIP(ip))
-    );
-
+    const geos = await Promise.all(sampled.map(([ip]) => lookupIP(ip)));
+    const observedAt = new Date().toISOString();
     const entries: ThreatMapEntry[] = [];
+
     for (let i = 0; i < sampled.length; i++) {
       const geo = geos[i];
       if (!geo) continue;
@@ -122,7 +139,7 @@ export async function fetchThreatMapData(): Promise<ThreatMapEntry[]> {
         sourceLng: geo.lng,
         destinationCountry: "Global",
         threatType: sampled[i][1],
-        firstSeen: new Date().toISOString(),
+        observedAt,
       });
     }
 

@@ -8,7 +8,6 @@ import {
   Geography,
   Marker,
 } from "react-simple-maps";
-import { motion } from "framer-motion";
 
 interface ThreatMapEntry {
   sourceIP: string;
@@ -17,7 +16,7 @@ interface ThreatMapEntry {
   sourceLng: number;
   destinationCountry: string;
   threatType: string;
-  firstSeen: string;
+  observedAt: string;
 }
 
 interface CountryCluster {
@@ -100,11 +99,14 @@ export default function ThreatMap() {
       <div className="panel-header p-4 flex items-center justify-between shrink-0">
         <div>
           <h2 className="text-lg font-semibold text-white flex items-center gap-3 font-display">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            Global Threat Map
+            <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+            Reported IP sample
           </h2>
           <p className="text-xs text-gray-500 mt-1 font-mono">
-            Live attack-source activity from abuse.ch URLhaus
+            blocklist.de · sampled records with IP geolocation
+          </p>
+          <p className="text-[10px] text-gray-600 mt-0.5 font-mono">
+            This is a category-balanced sample, not a count of worldwide attacks.
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 font-mono">
@@ -140,53 +142,44 @@ export default function ThreatMap() {
             }
           </Geographies>
 
-          {clusters.map((cluster, i) => {
-            const radius = 3 + (cluster.count / maxCount) * 8;
+          {clusters.map((cluster) => {
+            const radius = Math.sqrt(cluster.count / maxCount) * 10 + 4;
+            const label = `${countryName(cluster.country)}: ${cluster.count} sampled records`;
             return (
               <Marker
                 key={cluster.country}
                 coordinates={[cluster.lng, cluster.lat]}
                 onMouseEnter={() => setHovered(cluster)}
                 onMouseLeave={() => setHovered(null)}
+                aria-label={label}
               >
-                <motion.circle
-                  r={radius}
-                  fill="none"
-                  stroke="#EF4444"
-                  strokeWidth={1.5}
-                  initial={{ r: radius, opacity: 0.7 }}
-                  animate={{ r: radius + 16, opacity: 0 }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    delay: i * 0.2,
-                    ease: "easeOut",
-                  }}
-                />
                 <circle
                   r={radius}
-                  fill="#EF4444"
-                  fillOpacity={0.18}
-                  stroke="#EF4444"
-                  strokeWidth={1}
-                  style={{ cursor: "pointer" }}
+                  fill="none"
+                  stroke="#64DFA6"
+                  strokeWidth={1.5}
+                  aria-hidden="true"
                 />
-                <circle r={2} fill="#EF4444" />
+                <circle
+                  r={Math.max(2, radius * 0.55)}
+                  fill="#64DFA6"
+                  fillOpacity={0.85}
+                  style={{ cursor: "pointer" }}
+                  aria-hidden="true"
+                />
               </Marker>
             );
           })}
         </ComposableMap>
 
-        <div className="scan-line" />
-
         {/* Hover info chip */}
         {hovered && (
           <div className="absolute top-4 right-4 panel px-4 py-3 text-xs pointer-events-none z-20">
-            <div className="text-red-400 font-semibold text-sm font-mono">
+            <div className="text-emerald-400 font-semibold text-sm font-mono">
               {countryName(hovered.country)}
             </div>
             <div className="text-gray-300 mt-1 font-mono">
-              {hovered.count} active source{hovered.count > 1 ? "s" : ""}
+              {hovered.count} sampled record{hovered.count > 1 ? "s" : ""}
             </div>
             <div className="text-gray-500 mt-1 max-w-[200px] truncate">
               {hovered.threats.join(", ")}
@@ -197,8 +190,8 @@ export default function ThreatMap() {
         {/* Legend */}
         <div className="absolute bottom-4 left-4 panel p-3 text-xs z-20">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full border border-red-500 bg-red-500/30" />
-            <span className="text-gray-500 font-mono">Attack Source (size = activity)</span>
+            <span className="w-3 h-3 rounded-full border border-emerald-500 bg-emerald-500/30" />
+            <span className="text-gray-500 font-mono">Size = sampled records</span>
           </div>
         </div>
       </div>

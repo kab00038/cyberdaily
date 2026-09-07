@@ -1,10 +1,23 @@
-// lib/hn.ts
+// lib/hn.ts — Hacker News fetcher using the Algolia search API.
+//
+// Two modes are supported via `mode`:
+//   - "latest": date-bounded relevance search (newest matches first)
+//   - "top":    classic relevance search ordered by points (Top this week)
+//
+// The mode must be respected by both the upstream query and any client-side
+// reordering — calling site of the latest mode should not sort by points.
+import { parseTimestamp } from "./format";
+
 export interface HNStory {
   title: string;
   url: string;
   points: number;
   comments: number;
-  timeAgo: string;
+  /**
+   * RFC-3339 timestamp reported by Algolia. `null` if not parseable.
+   * Use `formatPublishedAt()` in the UI; do not synthesize timestamps.
+   */
+  publishedAt: string | null;
   hnUrl: string;
 }
 
@@ -17,38 +30,56 @@ interface HNHit {
   objectID: string;
 }
 
-function timeAgo(dateString: string): string {
-  const now = new Date();
-  const date = new Date(dateString);
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+export type HNMode = "latest" | "top";
 
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+const SECONDS_IN_DAY = 86_400;
+const HN_HITS_PER_PAGE = 20;
+
+function buildQueryUrl(query: string, mode: HNMode, days?: number): string {
+  const params = new URLSearchParams({
+    query,
+    tags: "story",
+    hitsPerPage: String(HN_HITS_PER_PAGE),
+  });
+
+  if (mode === "latest" && typeof days === "number" && days > 0) {
+    // numericFilters expects an array; Algolia supports created_at_i >=
+    const sinceUnix = Math.floor(Date.now() / 1000) - days * SECONDS_IN_DAY;
+    params.append("numericFilters", `created_at_i>=${sinceUnix}`);
+  }
+
+  return `https://hn.algolia.com/api/v1/search?${params.toString()}`;
 }
 
-export async function fetchHackerNewsStories(): Promise<HNStory[]> {
+export async function fetchHackerNewsStories(
+  mode: HNMode = "latest",
+  options: { days?: number; query?: string } = {}
+): Promise<HNStory[]> {
+  const query = options.query ?? "cybersecurity";
+  const days = options.days ?? (mode === "latest" ? 7 : undefined);
+  const url = buildQueryUrl(query, mode, days);
+
   try {
-    const response = await fetch(
-      "https://hn.algolia.com/api/v1/search?query=cybersecurity&tags=story&hitsPerPage=20",
-      { next: { revalidate: 900 } } // 15 min cache
-    );
+    const response = await fetch(url, {
+      next: { revalidate: 900 }, // 15 min cache
+    });
 
-    if (!response.ok) throw new Error("HN API error");
+    if (!response.ok) throw new Error(`HN API error ${response.status}`);
 
-    const data = await response.json();
-    return data.hits.map((hit: HNHit) => ({
-      title: hit.title,
-      url: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`,
-      points: hit.points,
-      comments: hit.num_comments,
-      timeAgo: timeAgo(hit.created_at),
-      hnUrl: `https://news.ycombinator.com/item?id=${hit.objectID}`,
-    }));
+    const data = (await response.json()) as { hits?: HNHit[] };
+    const hits = Array.isArray(data.hits) ? data.hits : [];
+
+    return hits.map((hit) => {
+      const ts = parseTimestamp(hit.created_at);
+      return {
+        title: hit.title,
+        url: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`,
+        points: hit.points,
+        comments: hit.num_comments,
+        publishedAt: ts === null ? null : new Date(ts).toISOString(),
+        hnUrl: `https://news.ycombinator.com/item?id=${hit.objectID}`,
+      };
+    });
   } catch (error) {
     console.error("Error fetching HN stories:", error);
     return [];

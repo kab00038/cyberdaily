@@ -2,13 +2,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatPublishedAt } from "@/lib/format";
 
 interface HNStory {
   title: string;
   url: string;
   points: number;
   comments: number;
-  timeAgo: string;
+  publishedAt: string | null;
   hnUrl: string;
 }
 
@@ -77,7 +78,37 @@ export default function HackerNewsFeed() {
                 {story.points}
               </span>
               <span>{story.comments} comments</span>
-              <span>{story.timeAgo}</span>
+              <span>{formatPublishedAt(story.publishedAt)}</span>
+              {story.url === story.hnUrl ? (
+                <a
+                  href={story.hnUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-500 hover:text-emerald-400"
+                >
+                  View discussion
+                </a>
+              ) : (
+                <>
+                  <a
+                    href={story.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-500 hover:text-emerald-400"
+                  >
+                    Read article
+                  </a>
+                  <span>·</span>
+                  <a
+                    href={story.hnUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-500 hover:text-emerald-400"
+                  >
+                    View discussion
+                  </a>
+                </>
+              )}
             </div>
           </a>
         ))}

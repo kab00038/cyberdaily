@@ -48,6 +48,9 @@ function severityBarWidth(score: number | null): string {
 export default function ThreatForecast() {
   const [cves, setCves] = useState<RiskScoredCVE[]>([]);
   const [kev, setKev] = useState<KEVItem[]>([]);
+  const [completeness, setCompleteness] =
+    useState<"complete" | "partial" | "unknown">("complete");
+  const [nvdError, setNvdError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,6 +60,8 @@ export default function ThreatForecast() {
         const data = await res.json();
         setCves(data.cves || []);
         setKev(data.kev || []);
+        setCompleteness(data.completeness || "complete");
+        setNvdError(data.nvdError || null);
       } catch (error) {
         console.error("Failed to fetch threats:", error);
       } finally {
@@ -83,6 +88,16 @@ export default function ThreatForecast() {
 
   return (
     <div className="space-y-6">
+      {(completeness === "partial" ||
+        completeness === "unknown" ||
+        nvdError !== null) && (
+        <div className="panel rounded-lg p-3 text-xs text-gray-400 border border-white/[0.06]">
+          {completeness === "partial"
+            ? "Showing a partial NVD result set — counts and CVEs are incomplete."
+            : "NVD data could not be loaded. Some information may be unavailable."}
+        </div>
+      )}
+
       {/* CISA KEV Section */}
       <div className="panel rounded-lg overflow-hidden">
         <div className="panel-header p-4">

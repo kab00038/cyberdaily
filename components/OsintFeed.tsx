@@ -2,27 +2,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatPublishedAt } from "@/lib/format";
 
 interface OsintPost {
   title: string;
   url: string;
   source: string;
-  score: number;
-  comments: number;
-  timeAgo: string;
+  score: number | null;
+  comments: number | null;
+  publishedAt: string | null;
   subreddit?: string;
   flair?: string;
 }
 
 const SUBREDDIT_COLORS: Record<string, string> = {
-  netsec: "text-red-500",
-  cybersecurity: "text-cyan-500",
-  Malware: "text-amber-500",
-  ReverseEngineering: "text-violet-500",
-  AskNetsec: "text-emerald-500",
-  computerforensics: "text-sky-500",
-  infosec: "text-orange-500",
-  hacking: "text-rose-500",
+  netsec: "text-gray-500",
+  cybersecurity: "text-gray-500",
+  Malware: "text-gray-500",
+  ReverseEngineering: "text-gray-500",
+  AskNetsec: "text-gray-500",
+  computerforensics: "text-gray-500",
+  infosec: "text-gray-500",
+  hacking: "text-gray-500",
 };
 
 export default function OsintFeed() {
@@ -122,10 +123,10 @@ export default function OsintFeed() {
               )}
               <span className="flex items-center gap-1">
                 <span className="text-emerald-500">▲</span>
-                {post.score}
+                {post.score ?? "—"}
               </span>
-              <span>{post.comments} comments</span>
-              <span>{post.timeAgo}</span>
+              <span>{post.comments ?? "—"} comments</span>
+              <span>{formatPublishedAt(post.publishedAt)}</span>
             </div>
           </a>
         ))}
