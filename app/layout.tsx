@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CyberDaily - Cybersecurity News Dashboard",
+  title: "CyberDaily — Cybersecurity news and vulnerability intelligence",
   description:
-    "Daily cybersecurity news, threat forecasts, and real-time threat intelligence",
+    "Daily cybersecurity news, vulnerabilities, and threat intelligence.",
 };
 
 export default function RootLayout({

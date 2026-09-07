@@ -9,6 +9,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Semantic palette tokens (backed by CSS custom properties defined
+        // in app/globals.css). Use these instead of raw hex values where
+        // possible so the design system stays consistent.
+        ui: {
+          canvas: "var(--cd-canvas)",
+          sidebar: "var(--cd-sidebar)",
+          surface: "var(--cd-surface)",
+          raised: "var(--cd-raised)",
+          border: "var(--cd-border)",
+          "control-border": "var(--cd-control-border)",
+          text: "var(--cd-text)",
+          secondary: "var(--cd-secondary)",
+          muted: "var(--cd-muted)",
+          accent: "var(--cd-accent)",
+          critical: "var(--cd-critical)",
+          high: "var(--cd-high)",
+          medium: "var(--cd-medium)",
+          low: "var(--cd-low)",
+          unknown: "var(--cd-unknown)",
+        },
+        // Legacy tokens — kept during the migration so existing component
+        // classes still resolve. Remove once all consumers migrate to ui.*.
         cyber: {
           dark: "#0B0F0E",
           navy: "#0A0E0C",

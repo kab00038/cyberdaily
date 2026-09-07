@@ -4,12 +4,41 @@
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-body {
-  background: #0B0F0E;
-  min-height: 100vh;
-  color: #D1D5DB;
-  font-family: 'DM Sans', system-ui, sans-serif;
+:root {
+  color-scheme: dark;
+
+  /* Semantic palette tokens (used by both the CSS below and the Tailwind
+     `ui-*` namespace in tailwind.config.ts). Keep these in sync. */
+  --cd-canvas: #0b1110;
+  --cd-sidebar: #0d1512;
+  --cd-surface: #131d19;
+  --cd-raised: #1a2821;
+  --cd-border: #2a3b32;
+  --cd-control-border: #718579;
+
+  --cd-text: #f0f6f2;
+  --cd-secondary: #becbc3;
+  --cd-muted: #96aa9e;
+
+  --cd-accent: #64dfa6;
+
+  --cd-critical: #ff8e94;
+  --cd-high: #ffb175;
+  --cd-medium: #f3d278;
+  --cd-low: #91c8ff;
+  --cd-unknown: #b6c0c9;
 }
+
+body {
+  background: var(--cd-canvas);
+  min-height: 100vh;
+  color: var(--cd-text);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+html { scroll-padding-top: 5rem; }
+::selection { background: #285d43; color: #fff; }
 
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
@@ -19,63 +48,170 @@ body {
   font-family: 'Space Grotesk', system-ui, sans-serif;
 }
 
-/* Ambient emerald glow — sits behind the content area only */
-.ambient-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 60% 50%, rgba(16, 185, 129, 0.08), transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Glass-morphism panel system — no box shadows */
-.panel {
-  background: rgba(18, 25, 22, 0.65);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  transition: transform 0.3s ease, border-color 0.3s ease;
-}
-
-/* Hover lift is reserved for interactive panels; static panels stay calm. */
-.panel.interactive:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.10);
-}
-
-.panel-header {
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* Visible keyboard focus everywhere */
+/* Keyboard focus — visible against all surface tones. */
 :focus-visible {
-  outline: 2px solid #64DFA6;
+  outline: 2px solid var(--cd-accent);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
-/* Accent text glows */
-.glow-text-green {
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
+/* Ambient emerald glow — sits behind the content area only */
+.ambient-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 60% 50%, rgba(100, 223, 166, 0.06), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.glow-text-red {
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5), 0 0 20px rgba(239, 68, 68, 0.3);
+/* Panel system — slightly lighter opaque surface than the previous glass
+   treatment so contrast is predictable and there are fewer competing
+   layers. */
+.panel {
+  background: var(--cd-surface);
+  border: 1px solid var(--cd-border);
+  border-radius: 12px;
 }
 
-.glow-text-cyan {
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
+/* Hover lift is reserved for interactive panels. Static panels stay calm. */
+.panel.interactive {
+  transition: background-color 140ms ease, border-color 140ms ease;
 }
 
-.glow-text-amber {
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3);
+.panel.interactive:hover,
+.panel.interactive:focus-within {
+  background: var(--cd-raised);
+  border-color: var(--cd-control-border);
 }
 
-.glow-text-purple {
-  text-shadow: 0 0 10px rgba(209, 213, 219, 0.4), 0 0 20px rgba(209, 213, 219, 0.2);
+.panel-header {
+  padding: 20px 24px;
+  background: none;
+  border-bottom: 1px solid var(--cd-border);
 }
+
+/* Typography utility classes */
+.page-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.15rem + 1vw, 2rem);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--cd-text);
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--cd-text);
+}
+
+.metadata {
+  color: var(--cd-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.numeric { font-variant-numeric: tabular-nums; }
+
+/* Standard form control — 44px minimum interactive height */
+.control {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--cd-control-border);
+  border-radius: 8px;
+  background: var(--cd-canvas);
+  color: var(--cd-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.control::placeholder { color: var(--cd-muted); opacity: 1; }
+.control:disabled { cursor: not-allowed; opacity: 0.65; }
+
+/* Text link — underline on hover, not always */
+.text-link {
+  color: var(--cd-accent);
+  text-underline-offset: 3px;
+}
+.text-link:hover { text-decoration: underline; }
+
+/* App shell geometry — single source of truth for the sidebar width. */
+.app-shell {
+  min-height: 100dvh;
+}
+
+.app-sidebar {
+  display: none;
+}
+
+.app-main {
+  min-width: 0;
+  min-height: 100dvh;
+}
+
+.page-content {
+  max-width: 90rem;
+  margin-inline: auto;
+  padding: 24px;
+}
+
+@media (min-width: 64rem) {
+  .app-sidebar {
+    display: block;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--sidebar-width, 15rem);
+    background: var(--cd-sidebar);
+    border-right: 1px solid var(--cd-border);
+    overflow-y: auto;
+    z-index: 40;
+  }
+  .app-main {
+    margin-left: var(--sidebar-width, 15rem);
+  }
+}
+
+@media (max-width: 40rem) {
+  .page-content { padding: 16px; }
+}
+
+/* Mobile navigation drawer — slides in from the left on small screens. */
+@keyframes cd-drawer-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+dialog.cd-mobile-nav {
+  padding: 0;
+  border: none;
+}
+
+dialog.cd-mobile-nav[open] {
+  animation: cd-drawer-slide 200ms ease-out;
+}
+
+dialog.cd-mobile-nav::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--cd-accent);
+  color: var(--cd-canvas);
+  border-radius: 8px;
+  transform: translateY(-160%);
+  text-decoration: none;
+  font-weight: 600;
+}
+.skip-link:focus { transform: translateY(0); }
 
 /* Subtle map atmosphere */
 .scanlines::before {
@@ -86,8 +222,8 @@ body {
     to bottom,
     transparent,
     transparent 2px,
-    rgba(16, 185, 129, 0.03) 2px,
-    rgba(16, 185, 129, 0.03) 4px
+    rgba(100, 223, 166, 0.025) 2px,
+    rgba(100, 223, 166, 0.025) 4px
   );
   pointer-events: none;
   z-index: 10;
@@ -103,20 +239,6 @@ body {
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 5;
-}
-
-.scan-line {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(16, 185, 129, 0.06) 50%,
-    transparent 100%
-  );
-  height: 40%;
-  pointer-events: none;
-  z-index: 15;
 }
 
 /* Sidebar offset for main content */
@@ -136,25 +258,24 @@ main {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0F0E;
+  background: var(--cd-canvas);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #10B981;
+  background: var(--cd-accent);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #059669;
+  background: #285d43;
 }
 
-/* Noise texture overlay (subtle) */
-.noise-overlay::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  opacity: 0.03;
-  pointer-events: none;
-  z-index: 1;
+/* Reduced motion — kill perpetual pulses, scans, animations. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
