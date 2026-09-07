@@ -266,9 +266,7 @@ export default function DashboardSection() {
         <p className="metadata mb-2">
           Sampled records — not a count of worldwide attacks.
         </p>
-        <div className="map-frame">
-          <ThreatMap />
-        </div>
+        <ThreatMap />
       </section>
 
       {/* Analytics summary — single useful chart */}

@@ -148,6 +148,20 @@ html { scroll-padding-top: 5rem; }
   background: color-mix(in srgb, var(--cd-raised) 60%, transparent);
 }
 
+/* Map marker pulse — one brief expanding ring when a country is selected.
+   transform-box: fill-box keeps the scale centered on the marker itself
+   instead of the SVG origin. Disabled automatically for reduced motion. */
+@keyframes map-pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.map-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: map-pulse 1.2s ease-out;
+}
+
 /* App shell geometry — single source of truth for the sidebar width. */
 .app-shell {
   min-height: 100dvh;
