@@ -1,57 +1,56 @@
 // components/ThreatForecast.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { RiskScoredCVE, scoreToColor } from "@/lib/risk-scoring";
+import { useEffect, useMemo, useState } from "react";
+import type { RiskScoredCVE } from "@/lib/risk-scoring";
+import type { KEVItem } from "@/lib/abuse-ch";
+import CveTable, {
+  type SortColumn,
+  type SortState,
+} from "@/components/threats/CveTable";
 
-interface KEVItem {
-  cveID: string;
-  vendorProject: string;
-  product: string;
-  vulnerabilityName: string;
-  dateAdded: string;
-  shortDescription: string;
-}
+type Completeness = "complete" | "partial" | "unknown";
+type SeverityFilter = "all" | "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
+type ExploitFilter = "all" | "exploited" | "high-critical";
 
-const SEVERITY_CONFIG: Record<string, { color: string; bar: string }> = {
-  CRITICAL: {
-    color: "text-red-500",
-    bar: "bg-red-500",
-  },
-  HIGH: {
-    color: "text-orange-500",
-    bar: "bg-orange-500",
-  },
-  MEDIUM: {
-    color: "text-amber-500",
-    bar: "bg-amber-500",
-  },
-  LOW: {
-    color: "text-emerald-500",
-    bar: "bg-emerald-500",
-  },
-};
+const SEVERITY_OPTIONS: Array<{ value: SeverityFilter; label: string }> = [
+  { value: "all", label: "All severities" },
+  { value: "CRITICAL", label: "Critical" },
+  { value: "HIGH", label: "High" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "LOW", label: "Low" },
+  { value: "UNKNOWN", label: "Unknown" },
+];
 
-const DEFAULT_SEVERITY = {
-  color: "text-gray-500",
-  bar: "bg-gray-600",
-};
+const EXPLOIT_OPTIONS: Array<{ value: ExploitFilter; label: string }> = [
+  { value: "all", label: "All vulnerabilities" },
+  { value: "exploited", label: "Known exploited" },
+  { value: "high-critical", label: "High / Critical only" },
+];
 
-function severityBarWidth(score: number | null): string {
-  if (score === null || score === undefined) return "w-1/4";
-  if (score >= 9) return "w-full";
-  if (score >= 7) return "w-3/4";
-  if (score >= 4) return "w-1/2";
-  return "w-1/4";
+// Default priority order: known exploited first, then descending CVSS, then
+// newest published date. The table's KEV comparator applies that tie-breaking.
+const PRIORITY_SORT: SortState = { column: "kev", direction: "desc" };
+const NEWEST_SORT: SortState = { column: "published", direction: "desc" };
+
+function normalizeSeverity(severity: string | null): string {
+  const key = severity?.trim().toUpperCase() ?? "";
+  return ["CRITICAL", "HIGH", "MEDIUM", "LOW"].includes(key) ? key : "UNKNOWN";
 }
 
 export default function ThreatForecast() {
   const [cves, setCves] = useState<RiskScoredCVE[]>([]);
-  const [kev, setKev] = useState<KEVItem[]>([]);
-  const [completeness, setCompleteness] =
-    useState<"complete" | "partial" | "unknown">("complete");
+  const [kevCatalog, setKevCatalog] = useState<KEVItem[]>([]);
+  const [completeness, setCompleteness] = useState<Completeness>("complete");
   const [nvdError, setNvdError] = useState<string | null>(null);
+  const [kevKnown, setKevKnown] = useState(true);
   const [loading, setLoading] = useState(true);
+
+  const [query, setQuery] = useState("");
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
+  const [exploitFilter, setExploitFilter] = useState<ExploitFilter>("all");
+  const [sort, setSort] = useState<SortState>(PRIORITY_SORT);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchThreats() {
@@ -59,9 +58,12 @@ export default function ThreatForecast() {
         const res = await fetch("/api/threats");
         const data = await res.json();
         setCves(data.cves || []);
-        setKev(data.kev || []);
+        setKevCatalog(data.kev || []);
         setCompleteness(data.completeness || "complete");
         setNvdError(data.nvdError || null);
+        // A zero-sized catalog means the CISA feed failed to load, so KEV
+        // membership is genuinely unknown rather than "not listed".
+        setKevKnown((data.kevCatalogSize ?? 0) > 0);
       } catch (error) {
         console.error("Failed to fetch threats:", error);
       } finally {
@@ -73,6 +75,57 @@ export default function ThreatForecast() {
     const interval = setInterval(fetchThreats, 3600000); // 1 hour
     return () => clearInterval(interval);
   }, []);
+
+  const knownExploitedIds = useMemo(
+    () => new Set(cves.filter((cve) => cve.inKEV).map((cve) => cve.id)),
+    [cves]
+  );
+
+  const kevById = useMemo(
+    () => new Map(kevCatalog.map((item) => [item.cveID, item])),
+    [kevCatalog]
+  );
+
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return cves.filter((cve) => {
+      if (
+        needle &&
+        !cve.id.toLowerCase().includes(needle) &&
+        !cve.description.toLowerCase().includes(needle)
+      ) {
+        return false;
+      }
+      const sev = normalizeSeverity(cve.severity);
+      if (severityFilter !== "all" && sev !== severityFilter) return false;
+      if (exploitFilter === "exploited" && !knownExploitedIds.has(cve.id)) {
+        return false;
+      }
+      if (exploitFilter === "high-critical" && sev !== "HIGH" && sev !== "CRITICAL") {
+        return false;
+      }
+      return true;
+    });
+  }, [cves, query, severityFilter, exploitFilter, knownExploitedIds]);
+
+  const handleSortChange = (column: SortColumn) => {
+    setSort((current) => {
+      if (current.column === column) {
+        return {
+          column,
+          direction: current.direction === "asc" ? "desc" : "asc",
+        };
+      }
+      return { column, direction: column === "id" ? "asc" : "desc" };
+    });
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedId((current) => (current === id ? null : id));
+  };
+
+  const isPrioritySort = sort.column === "kev" && sort.direction === "desc";
+  const isNewestSort = sort.column === "published" && sort.direction === "desc";
 
   if (loading) {
     return (
@@ -87,118 +140,137 @@ export default function ThreatForecast() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {(completeness === "partial" ||
         completeness === "unknown" ||
         nvdError !== null) && (
-        <div className="panel rounded-lg p-3 text-xs text-gray-400 border border-white/[0.06]">
+        <div
+          role="status"
+          className="panel rounded-lg p-3 text-xs text-gray-400 border border-white/[0.06]"
+        >
           {completeness === "partial"
             ? "Showing a partial NVD result set — counts and CVEs are incomplete."
             : "NVD data could not be loaded. Some information may be unavailable."}
         </div>
       )}
 
-      {/* CISA KEV Section */}
+      <p className="metadata" aria-live="polite">
+        Showing {cves.length} loaded CVEs ·{" "}
+        <span className="font-mono">{completeness}</span>
+      </p>
+
       <div className="panel rounded-lg overflow-hidden">
-        <div className="panel-header p-4">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            CISA Known Exploited Vulnerabilities
-          </h3>
-        </div>
-        <div className="divide-y divide-white/[0.06]">
-          {kev.slice(0, 5).map((item) => (
-            <div key={item.cveID} className="p-4 hover:bg-[#0B0F0E]/40 transition-colors group">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <span className="text-xs font-mono text-emerald-500 glow-text-green group-hover:text-emerald-400 transition-colors">
-                  {item.cveID}
-                </span>
-                <span className="text-[10px] text-gray-500 font-mono">{item.dateAdded}</span>
-              </div>
-              <p className="text-sm text-gray-100 font-medium mb-1 line-clamp-1">
-                {item.vulnerabilityName}
-              </p>
-              <p className="text-xs text-gray-400">
-                {item.vendorProject} — {item.product}
-              </p>
+        {/* Search / filter toolbar */}
+        <div className="border-b border-white/[0.06] p-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="sm:col-span-2">
+              <label
+                htmlFor="cve-search"
+                className="mb-1 block text-xs text-gray-400"
+              >
+                Search
+              </label>
+              <input
+                id="cve-search"
+                type="search"
+                className="control w-full"
+                placeholder="CVE ID or description…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
             </div>
-          ))}
+            <div>
+              <label
+                htmlFor="severity-filter"
+                className="mb-1 block text-xs text-gray-400"
+              >
+                Severity
+              </label>
+              <select
+                id="severity-filter"
+                className="control w-full"
+                value={severityFilter}
+                onChange={(e) =>
+                  setSeverityFilter(e.target.value as SeverityFilter)
+                }
+              >
+                {SEVERITY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="exploit-filter"
+                className="mb-1 block text-xs text-gray-400"
+              >
+                Exploitation
+              </label>
+              <select
+                id="exploit-filter"
+                className="control w-full"
+                value={exploitFilter}
+                onChange={(e) =>
+                  setExploitFilter(e.target.value as ExploitFilter)
+                }
+              >
+                {EXPLOIT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Sort:</span>
+              <button
+                type="button"
+                aria-pressed={isPrioritySort}
+                onClick={() => setSort(PRIORITY_SORT)}
+                className={`control !min-h-0 rounded-md px-3 py-1.5 text-xs transition-colors ${
+                  isPrioritySort
+                    ? "border-emerald-500 text-emerald-300"
+                    : "text-gray-300 hover:border-emerald-500/60"
+                }`}
+              >
+                Priority
+              </button>
+              <button
+                type="button"
+                aria-pressed={isNewestSort}
+                onClick={() => setSort(NEWEST_SORT)}
+                className={`control !min-h-0 rounded-md px-3 py-1.5 text-xs transition-colors ${
+                  isNewestSort
+                    ? "border-emerald-500 text-emerald-300"
+                    : "text-gray-300 hover:border-emerald-500/60"
+                }`}
+              >
+                Newest first
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Showing {filtered.length} of {cves.length} CVEs
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Trending CVEs Section */}
-      <div className="panel rounded-lg overflow-hidden">
-        <div className="panel-header p-4">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Trending CVEs
-          </h3>
-        </div>
-        <div className="divide-y divide-white/[0.06]">
-          {cves
-            .slice()
-            .sort((a, b) => b.riskScore - a.riskScore)
-            .slice(0, 8)
-            .map((cve) => {
-              const config = cve.severity
-                ? SEVERITY_CONFIG[cve.severity] || DEFAULT_SEVERITY
-                : DEFAULT_SEVERITY;
-              return (
-                <div key={cve.id} className="p-4 hover:bg-[#0B0F0E]/40 transition-colors group">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs font-mono text-emerald-500 glow-text-green group-hover:text-emerald-400 transition-colors">
-                      {cve.id}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {cve.inKEV && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/40">
-                          KEV
-                        </span>
-                      )}
-                      <span className={`text-xs px-2 py-0.5 rounded border ${scoreToColor(cve.riskLevel)}`}>
-                        {cve.riskLevel} ({cve.riskScore})
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400 line-clamp-2 mb-2">{cve.description}</p>
-
-                  {cve.riskFactors.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {cve.riskFactors.map((factor, i) => (
-                        <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-[#0B0F0E]/50 text-gray-500">
-                          {factor}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                    {cve.cvssScore !== null && <span>CVSS: {cve.cvssScore}</span>}
-                    {cve.epssScore && (
-                      <span>EPSS: {(parseFloat(cve.epssScore.epss) * 100).toFixed(1)}%</span>
-                    )}
-                    {cve.epssScore && (
-                      <span>Percentile: {cve.epssScore.percentile}</span>
-                    )}
-                  </div>
-
-                  {cve.cvssScore !== null && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${config.bar} ${severityBarWidth(cve.cvssScore)}`}
-                        />
-                      </div>
-                      <span className={`text-[10px] font-mono ${config.color}`}>{cve.cvssScore}</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+        {/* Scrollable table with sticky CVE column */}
+        <div className="overflow-x-auto">
+          <CveTable
+            cves={filtered}
+            knownExploitedIds={knownExploitedIds}
+            kevById={kevById}
+            kevKnown={kevKnown}
+            sort={sort}
+            onSortChange={handleSortChange}
+            expandedId={expandedId}
+            onToggleExpand={toggleExpand}
+          />
         </div>
       </div>
     </div>

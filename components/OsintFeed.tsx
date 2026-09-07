@@ -15,6 +15,7 @@ interface OsintPost {
   flair?: string;
 }
 
+// All subreddits use a single neutral color.
 const SUBREDDIT_COLORS: Record<string, string> = {
   netsec: "text-gray-500",
   cybersecurity: "text-gray-500",
@@ -29,6 +30,7 @@ const SUBREDDIT_COLORS: Record<string, string> = {
 export default function OsintFeed() {
   const [posts, setPosts] = useState<OsintPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [selectedSub, setSelectedSub] = useState<string>("all");
 
   useEffect(() => {
@@ -36,9 +38,17 @@ export default function OsintFeed() {
       try {
         const res = await fetch("/api/osint");
         const data = await res.json();
-        setPosts(data);
-      } catch (error) {
-        console.error("Failed to fetch OSINT:", error);
+        if (data && !Array.isArray(data)) {
+          setError(true);
+          setPosts([]);
+        } else {
+          setError(false);
+          setPosts(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch OSINT:", err);
+        setError(true);
+        setPosts([]);
       } finally {
         setLoading(false);
       }
@@ -79,8 +89,9 @@ export default function OsintFeed() {
           <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
-          OSINT Chatter
+          Community
         </h3>
+        <p className="metadata mt-1">Discussions from cybersecurity subreddits</p>
       </div>
 
       {/* Subreddit filter */}
@@ -100,37 +111,53 @@ export default function OsintFeed() {
         ))}
       </div>
 
-      <div className="divide-y divide-white/[0.06]">
-        {filtered.slice(0, 15).map((post, i) => (
+      {error ? (
+        <p className="p-4 text-sm text-gray-500">Unable to load community discussions</p>
+      ) : filtered.length === 0 ? (
+        <p className="p-4 text-sm text-gray-500">No recent discussions from monitored subreddits.</p>
+      ) : (
+        <>
+          <div className="divide-y divide-white/[0.06]">
+            {filtered.slice(0, 15).map((post, i) => (
+              <a
+                key={`${post.url}-${i}`}
+                href={post.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-4 py-3 hover:bg-[#0B0F0E]/50 transition-colors group"
+              >
+                <p className="text-[17px] font-semibold text-gray-100 line-clamp-2 mb-2 group-hover:text-emerald-400 transition-colors">
+                  {post.title}
+                </p>
+                <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                  <span className={`font-mono ${SUBREDDIT_COLORS[post.subreddit || ""] || "text-gray-500"}`}>
+                    {post.source}
+                  </span>
+                  {post.flair && (
+                    <span className="px-1.5 py-0.5 rounded bg-[#0B0F0E]/80 text-gray-400 border border-white/[0.06]">
+                      {post.flair}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <span className="text-emerald-500">▲</span>
+                    {post.score ?? "—"}
+                  </span>
+                  <span>{post.comments ?? "—"} comments</span>
+                  <span className="metadata">{formatPublishedAt(post.publishedAt)}</span>
+                </div>
+              </a>
+            ))}
+          </div>
           <a
-            key={`${post.url}-${i}`}
-            href={post.url}
+            href="https://www.reddit.com/r/netsec/"
             target="_blank"
             rel="noopener noreferrer"
-            className="block px-4 py-3 hover:bg-[#0B0F0E]/50 transition-colors group"
+            className="block w-full py-3 text-xs font-mono uppercase tracking-widest text-ui-accent border-t border-white/[0.06] text-center hover:bg-emerald-500/10 transition-colors"
           >
-            <p className="text-sm text-gray-300 line-clamp-2 mb-2 group-hover:text-emerald-400 transition-colors">
-              {post.title}
-            </p>
-            <div className="flex items-center gap-3 text-[10px] text-gray-500">
-              <span className={`font-mono ${SUBREDDIT_COLORS[post.subreddit || ""] || "text-gray-500"}`}>
-                {post.source}
-              </span>
-              {post.flair && (
-                <span className="px-1.5 py-0.5 rounded bg-[#0B0F0E]/80 text-gray-400 border border-white/[0.06]">
-                  {post.flair}
-                </span>
-              )}
-              <span className="flex items-center gap-1">
-                <span className="text-emerald-500">▲</span>
-                {post.score ?? "—"}
-              </span>
-              <span>{post.comments ?? "—"} comments</span>
-              <span>{formatPublishedAt(post.publishedAt)}</span>
-            </div>
+            View more discussions
           </a>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }

@@ -137,6 +137,17 @@ html { scroll-padding-top: 5rem; }
 }
 .text-link:hover { text-decoration: underline; }
 
+/* Interactive list row — subtle hover affordance for feed rows. Rows keep
+   their own thin border-b separators; this only tints the background on
+   hover/focus so the list stays calm until the pointer/keyboard arrives. */
+.interactive-row {
+  transition: background-color 140ms ease;
+}
+.interactive-row:hover,
+.interactive-row:focus-within {
+  background: color-mix(in srgb, var(--cd-raised) 60%, transparent);
+}
+
 /* App shell geometry — single source of truth for the sidebar width. */
 .app-shell {
   min-height: 100dvh;
@@ -278,4 +289,24 @@ main {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Dashboard briefing — news/KEV previews and compact map (Phase C1).
+   The map sits lower and smaller so the first viewport leads with the
+   page purpose, summary metrics, and useful stories/vulnerabilities. */
+.briefing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 80rem) {
+  .briefing-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(20rem, 1fr);
+  }
+}
+
+.map-frame {
+  height: clamp(16rem, 30vw, 24rem);
 }

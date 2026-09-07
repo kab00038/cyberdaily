@@ -13,6 +13,13 @@ export interface NewsItem {
    */
   pubDate: string | null;
   thumbnail?: string;
+  /**
+   * AI-enriched fields merged onto each item by the `/api/news` route.
+   * Optional because the raw feed parser does not populate them.
+   */
+  aiSummary?: string | null;
+  category?: string | null;
+  urgency?: string | null;
 }
 
 const parser = new XMLParser({

@@ -1,194 +1,181 @@
 // components/NewsFeed.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { getCategoryColor, getCategoryLabel, ThreatCategory } from "@/lib/ai";
+import { useEffect, useMemo, useState } from "react";
+import type { NewsItem } from "@/lib/rss";
 import { formatPublishedAt } from "@/lib/format";
+import NewsRow from "@/components/news/NewsRow";
+import NewsToolbar from "@/components/news/NewsToolbar";
 
-interface NewsItem {
-  title: string;
-  link: string;
-  snippet: string;
-  source: string;
-  pubDate: string | null;
-  thumbnail?: string;
-  aiSummary?: string | null;
-  category?: string | null;
-  urgency?: string | null;
-}
-
-const SOURCE_STYLES: Record<string, { border: string; badge: string }> = {
-  BleepingComputer: {
-    border: "border-emerald-500",
-    badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  },
-  "The Hacker News": {
-    border: "border-cyan-500",
-    badge: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
-  },
-  "Krebs on Security": {
-    border: "border-violet-500",
-    badge: "bg-violet-500/15 text-violet-400 border-violet-500/30",
-  },
-  "Dark Reading": {
-    border: "border-red-500",
-    badge: "bg-red-500/15 text-red-400 border-red-500/30",
-  },
-  SecurityWeek: {
-    border: "border-amber-500",
-    badge: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  },
-  "The Record": {
-    border: "border-sky-500",
-    badge: "bg-sky-500/15 text-sky-400 border-sky-500/30",
-  },
-};
-
-const DEFAULT_STYLE = {
-  border: "border-gray-600",
-  badge: "bg-gray-600/15 text-gray-400 border-gray-600/30",
-};
+const PAGE_SIZE = 20;
+const REFRESH_MS = 900000; // 15 min
 
 export default function NewsFeed() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(10);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [error, setError] = useState(false);
+  const [query, setQuery] = useState("");
+  const [source, setSource] = useState("all");
+  const [days, setDays] = useState<number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchNews() {
       try {
         const res = await fetch("/api/news");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setNews(data);
-      } catch (error) {
-        console.error("Failed to fetch news:", error);
+        if (!cancelled) {
+          setNews(data);
+          setError(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch news:", err);
+        if (!cancelled) setError(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     fetchNews();
-    const interval = setInterval(fetchNews, 900000); // 15 min
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchNews, REFRESH_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="panel rounded-lg p-4 animate-pulse">
-            <div className="h-4 bg-white/[0.08] rounded w-3/4 mb-2" />
-            <div className="h-3 bg-white/[0.08] rounded w-1/2" />
-          </div>
-        ))}
-      </div>
-    );
-  }
+  // Reset the pagination window whenever the active filters change.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query, source, days]);
 
-  const categories = [
-    "all",
-    ...new Set(news.map((n) => n.category).filter((c): c is string => Boolean(c))),
-  ];
+  const sources = useMemo(
+    () =>
+      [...new Set(news.map((n) => n.source).filter((s): s is string => Boolean(s)))].sort(),
+    [news]
+  );
 
-  const filteredNews =
-    selectedCategory === "all"
-      ? news
-      : news.filter((n) => n.category === selectedCategory);
+  const visibleItems = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const cutoff = days === null ? null : Date.now() - days * 86_400_000;
+
+    const filtered = news.filter((item) => {
+      if (source !== "all" && item.source !== source) return false;
+
+      if (days !== null) {
+        const ts = item.pubDate ? Date.parse(item.pubDate) : NaN;
+        // Items with invalid/missing pubDate are not "fresh enough" — they
+        // fail the date filter.
+        if (!Number.isFinite(ts)) return false;
+        if ((ts as number) < (cutoff as number)) return false;
+      }
+
+      if (q) {
+        const haystack = `${item.title} ${item.snippet} ${item.source}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      return true;
+    });
+
+    return filtered.sort((a, b) => {
+      const aTs = a.pubDate ? Date.parse(a.pubDate) : NaN;
+      const bTs = b.pubDate ? Date.parse(b.pubDate) : NaN;
+      const aValid = Number.isFinite(aTs);
+      const bValid = Number.isFinite(bTs);
+      if (aValid && !bValid) return -1;
+      if (!aValid && bValid) return 1;
+      if (!aValid && !bValid) return 0;
+      return (bTs as number) - (aTs as number);
+    });
+  }, [news, source, days, query]);
+
+  const clearFilters = () => {
+    setQuery("");
+    setSource("all");
+    setDays(null);
+  };
 
   return (
     <div className="space-y-3">
-      {/* Category filter buttons */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`text-[10px] px-2 py-1 rounded border transition-colors ${
-              selectedCategory === cat
-                ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/40"
-                : "bg-[#0B0F0E]/50 text-gray-500 border-white/[0.08] hover:border-gray-500"
-            }`}
-          >
-            {cat === "all" ? "All" : getCategoryLabel(cat as ThreatCategory)}
-          </button>
-        ))}
-      </div>
+      <NewsToolbar
+        query={query}
+        onQueryChange={setQuery}
+        source={source}
+        onSourceChange={setSource}
+        sources={sources}
+        days={days}
+        onDaysChange={setDays}
+        totalCount={news.length}
+        visibleCount={Math.min(visibleCount, visibleItems.length)}
+        onClearFilters={clearFilters}
+      />
 
-      {filteredNews.slice(0, visibleCount).map((item, i) => {
-        const style = SOURCE_STYLES[item.source] || DEFAULT_STYLE;
-        return (
-          <a
-            key={`${item.link}-${i}`}
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`block panel rounded-lg p-4 border-l-4 ${style.border} hover:bg-[#0B0F0E]/60 transition-all duration-300 group`}
-          >
-            <div className="flex items-start gap-3">
-              {item.thumbnail && (
-                <img
-                  src={item.thumbnail}
-                  alt=""
-                  className="w-16 h-16 object-cover rounded flex-shrink-0 border border-white/[0.06]"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
+      <div aria-busy={loading || undefined}>
+        {loading ? (
+          <SkeletonList />
+        ) : error && news.length === 0 ? (
+          <p className="px-1 py-6 text-sm text-ui-muted">
+            Unable to load news. Try refreshing.
+          </p>
+        ) : visibleItems.length === 0 ? (
+          <div className="px-1 py-6 space-y-3">
+            <p className="text-sm text-ui-muted">No stories match these filters.</p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-xs font-mono uppercase tracking-widest text-ui-accent border border-ui-accent/30 rounded px-3 py-2 hover:bg-ui-accent/10 transition-colors"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-lg border border-ui-border overflow-hidden">
+              {visibleItems.slice(0, visibleCount).map((item) => (
+                <NewsRow
+                  key={item.link}
+                  item={item}
+                  dateLabel={formatPublishedAt(item.pubDate)}
                 />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  {item.category && item.category !== "general" && (
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded border ${getCategoryColor(item.category as ThreatCategory)} font-medium uppercase tracking-wider`}
-                    >
-                      {getCategoryLabel(item.category as ThreatCategory)}
-                    </span>
-                  )}
-                  {typeof item.urgency === "string" && item.urgency && (
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        item.urgency === "critical" ? "bg-red-500" :
-                        item.urgency === "high" ? "bg-orange-500" :
-                        item.urgency === "medium" ? "bg-amber-500" :
-                        "bg-emerald-500"
-                      }`}
-                    />
-                  )}
-                </div>
-                <h3 className="text-sm font-semibold text-gray-100 line-clamp-2 mb-1 group-hover:text-emerald-400 transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-gray-400 line-clamp-2 mb-3 leading-relaxed">
-                  {item.aiSummary || item.snippet}
-                </p>
-                {item.aiSummary && (
-                  <span className="text-[9px] text-emerald-500/70 font-mono">AI</span>
-                )}
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded border ${style.badge} font-medium uppercase tracking-wider`}
-                  >
-                    {item.source}
-                  </span>
-                  <span className="text-[10px] text-gray-500 font-mono">
-                    {formatPublishedAt(item.pubDate)}
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
-          </a>
-        );
-      })}
 
-      {visibleCount < filteredNews.length && (
-        <button
-          onClick={() => setVisibleCount((prev) => prev + 10)}
-          className="w-full py-3 text-xs font-mono uppercase tracking-widest text-emerald-500 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300"
+            {visibleCount < visibleItems.length && (
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                className="w-full py-3 text-xs font-mono uppercase tracking-widest text-ui-accent border border-ui-accent/30 rounded-lg hover:bg-ui-accent/10 hover:border-ui-accent/50 transition-colors"
+              >
+                Load more stories
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonList() {
+  return (
+    <div className="space-y-3">
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="flex gap-5 px-5 py-5 border border-ui-border rounded-lg animate-pulse"
         >
-          Load more intelligence
-        </button>
-      )}
+          <div className="flex-1 space-y-2">
+            <div className="h-3 bg-white/[0.08] rounded w-1/3" />
+            <div className="h-4 bg-white/[0.08] rounded w-3/4" />
+            <div className="h-3 bg-white/[0.08] rounded w-1/2" />
+          </div>
+          <div className="hidden sm:block w-24 h-24 bg-white/[0.08] rounded-lg" />
+        </div>
+      ))}
     </div>
   );
 }
