@@ -3,6 +3,7 @@
 // no dangerouslySetInnerHTML. The parent supplies the already-formatted
 // relative/absolute date label so rendering stays server-consistent.
 
+import Image from "next/image";
 import type { NewsItem } from "@/lib/rss";
 
 export interface NewsRowProps {
@@ -38,11 +39,16 @@ export default function NewsRow({ item, dateLabel }: NewsRowProps) {
         )}
       </div>
 
-      {/* Right optional thumbnail — decorative, hidden on small screens */}
+      {/* Right optional thumbnail — decorative, hidden on small screens.
+          `unoptimized` because these are remote RSS thumbnails we don't
+          control; the optimizer would re-fetch and re-encode them anyway. */}
       {item.thumbnail && (
-        <img
+        <Image
           src={item.thumbnail}
           alt=""
+          width={96}
+          height={72}
+          unoptimized
           loading="lazy"
           decoding="async"
           className="hidden sm:block w-24 h-24 object-cover rounded-lg flex-shrink-0 border border-ui-border"

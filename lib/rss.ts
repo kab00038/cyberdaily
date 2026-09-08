@@ -118,16 +118,6 @@ async function fetchSingleFeedResult(feed: {
   return { items: parsed, fetchedAt: new Date().toISOString() };
 }
 
-async function fetchSingleFeed(feed: { url: string; name: string }): Promise<NewsItem[]> {
-  try {
-    const result = await fetchSingleFeedResult(feed);
-    return result.items;
-  } catch (error) {
-    console.error(`Error fetching ${feed.name}:`, error);
-    return [];
-  }
-}
-
 /** Per-feed health probe — used by `/api/sources` and route `sourceMeta`. */
 export interface FeedStatus {
   name: string;
