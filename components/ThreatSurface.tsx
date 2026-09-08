@@ -101,7 +101,7 @@ export default function ThreatSurface() {
     return (
       <div className="panel p-5">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold text-white uppercase tracking-widest">
+          <h2 className="text-sm font-semibold text-white">
             Reported IP distribution
           </h2>
         </div>
@@ -115,7 +115,7 @@ export default function ThreatSurface() {
   return (
     <div className="panel p-5">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-sm font-semibold text-white flex items-center gap-2 uppercase tracking-widest">
+        <h2 className="text-sm font-semibold text-white flex items-center gap-2">
           <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
@@ -130,7 +130,7 @@ export default function ThreatSurface() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Threat type distribution */}
         <div>
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Categories in sample</h3>
+          <h3 className="text-xs text-gray-500 mb-3">Categories in sample</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={typeData} layout="vertical" margin={{ left: 0, right: 20 }}>
@@ -161,20 +161,20 @@ export default function ThreatSurface() {
         {/* Descriptive stats */}
         <div className="flex flex-col justify-center gap-5">
           <div>
-            <p className="text-3xl font-bold text-white font-display">{threats.length}</p>
-            <p className="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">
+            <p className="metric-number text-white">{threats.length}</p>
+            <p className="text-[11px] text-gray-500 font-medium mt-0.5">
               Unique sampled IPs
             </p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-white font-display">{categoryCount}</p>
-            <p className="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">
+            <p className="metric-number text-white">{categoryCount}</p>
+            <p className="text-[11px] text-gray-500 font-medium mt-0.5">
               Categories represented
             </p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-white font-display">{uniqueCountries}</p>
-            <p className="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-0.5">
+            <p className="metric-number text-white">{uniqueCountries}</p>
+            <p className="text-[11px] text-gray-500 font-medium mt-0.5">
               Source countries
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function ThreatSurface() {
 
         {/* Top source countries */}
         <div>
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Countries in sample</h3>
+          <h3 className="text-xs text-gray-500 mb-3">Countries in sample</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

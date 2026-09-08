@@ -154,7 +154,7 @@ export default function CveTable({
   };
 
   const headerButtonClasses =
-    "flex items-center text-[11px] font-semibold uppercase tracking-wider text-gray-400 transition-colors hover:text-gray-200";
+    "flex items-center text-[11px] font-semibold text-gray-400 transition-colors hover:text-gray-200";
 
   const exploitStateFor = (cve: RiskScoredCVE): ExploitState =>
     !kevKnown
@@ -201,7 +201,7 @@ export default function CveTable({
                 </button>
               </th>
               <th scope="col">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                <span className="text-[11px] font-semibold text-gray-400">
                   Summary
                 </span>
               </th>

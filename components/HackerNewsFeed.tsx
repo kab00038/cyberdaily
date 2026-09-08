@@ -59,8 +59,8 @@ export default function HackerNewsFeed() {
 
   return (
     <div className="panel rounded-lg overflow-hidden">
-      <div className="panel-header p-4">
-        <h3 className="text-sm font-semibold text-white flex items-center gap-2 uppercase tracking-widest">
+      <div className="panel-header">
+        <h3 className="section-title flex items-center gap-2">
           <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2L2 22h20L12 2zm0 3.5L18.5 20H5.5L12 5.5z" />
           </svg>
@@ -123,7 +123,7 @@ export default function HackerNewsFeed() {
             href="https://news.ycombinator.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full py-3 text-xs font-mono uppercase tracking-widest text-ui-accent border-t border-white/[0.06] text-center hover:bg-emerald-500/10 transition-colors"
+            className="block w-full py-3 text-xs font-mono text-ui-accent border-t border-white/[0.06] text-center hover:bg-emerald-500/10 transition-colors"
           >
             View more discussions
           </a>

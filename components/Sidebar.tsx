@@ -29,7 +29,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
             </div>
             <div>
               <span className="text-sm font-bold text-white tracking-wide font-display">CyberDaily</span>
-              <p className="text-[10px] text-emerald-500 font-mono uppercase tracking-wider">Anarisk</p>
+              <p className="text-[10px] text-emerald-500 font-mono">Anarisk</p>
             </div>
           </div>
         )}
@@ -89,7 +89,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
             </span>
             <div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Live monitoring</p>
+              <p className="text-[10px] text-gray-500">Live monitoring</p>
               <p className="text-[10px] text-emerald-500 font-mono">Operational</p>
             </div>
           </div>

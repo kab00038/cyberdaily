@@ -186,7 +186,7 @@ export default function ThreatForecast() {
             <div className="sm:col-span-2 lg:col-span-1">
               <label
                 htmlFor="cve-search"
-                className="mb-1 block text-xs text-gray-400"
+                className="control-label"
               >
                 Search
               </label>
@@ -203,7 +203,7 @@ export default function ThreatForecast() {
               <div className="mb-1 flex items-center justify-between gap-2">
                 <label
                   htmlFor="severity-filter"
-                  className="block text-xs text-gray-400"
+                  className="control-label !mb-0"
                 >
                   Severity
                 </label>
@@ -238,7 +238,7 @@ export default function ThreatForecast() {
             <div>
               <label
                 htmlFor="exploit-filter"
-                className="mb-1 block text-xs text-gray-400"
+                className="control-label"
               >
                 Exploitation
               </label>

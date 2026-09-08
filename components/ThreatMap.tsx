@@ -163,7 +163,7 @@ export default function ThreatMap() {
         if (e.key === "Escape") handleEscape();
       }}
     >
-      <div className="panel-header p-4 flex items-center justify-between shrink-0 gap-4">
+      <div className="panel-header flex items-center justify-between shrink-0 gap-4">
         <div>
           <h2 className="text-lg font-semibold text-white flex items-center gap-3 font-display">
             <span className="w-2 h-2 bg-emerald-500 rounded-full" />
@@ -311,7 +311,7 @@ export default function ThreatMap() {
 
         {/* Country distribution list */}
         <div className="min-w-0 border-t lg:border-t-0 lg:border-l border-ui-border bg-[#0B0F0E]/40">
-          <div className="p-4">
+          <div className="panel-body">
             <h3 className="section-title">Country distribution</h3>
             <p className="metadata mt-0.5">
               {totalRecords > 0

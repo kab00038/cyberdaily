@@ -16,7 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import ThreatMap from "@/components/ThreatMap";
-import { formatPublishedAt } from "@/lib/format";
+import { formatPublishedAt, isPublishedWithin } from "@/lib/format";
 
 interface NewsPreviewItem {
   title: string;
@@ -59,11 +59,11 @@ function MetricCard({ label, scope, href, value, status }: MetricCardProps) {
     <Link href={href} className="panel interactive p-5 block group">
       <div className="min-w-0">
         {status === "error" ? (
-          <p className="text-2xl sm:text-3xl font-bold text-gray-500 font-display">
+          <p className="metric-number text-gray-500">
             Unavailable
           </p>
         ) : status === "ready" && value !== null ? (
-          <p className="text-2xl sm:text-3xl font-bold text-white font-display">
+          <p className="metric-number text-white">
             {value.toLocaleString()}
           </p>
         ) : (
@@ -72,7 +72,7 @@ function MetricCard({ label, scope, href, value, status }: MetricCardProps) {
             aria-label="Loading"
           />
         )}
-        <p className="text-[11px] text-gray-500 uppercase tracking-widest font-medium mt-1.5">
+        <p className="text-[11px] text-gray-500 font-medium mt-1.5">
           {label}
         </p>
         <p className="text-[10px] text-gray-600 font-mono mt-0.5">{scope}</p>
@@ -96,6 +96,14 @@ export default function DashboardSection() {
   const [newsStatus, setNewsStatus] = useState<FetchStatus>("loading");
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [trendsStatus, setTrendsStatus] = useState<FetchStatus>("loading");
+
+  // Stable reference clock for the "last 7 days" preview filter — captured on
+  // mount (not Date.now() per render) so client/server output stays consistent.
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    setNowMs(Date.now());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,182 +158,195 @@ export default function DashboardSection() {
   const kevCount = threats?.kev?.length ?? null;
   const newsCount = news?.length ?? null;
 
+  // Latest-stories preview — same recency normalization as the News page so
+  // future-dated or stale items never lead the dashboard.
+  const latestStories = (news ?? [])
+    .filter((n) => isPublishedWithin(n.pubDate, nowMs, 7 * 24))
+    .slice(0, 6);
+
   return (
-    <div className="space-y-6">
+    <>
       {/* Page header */}
-      <header>
+      <header className="page-header">
         <h1 className="page-title">Today</h1>
-        <p className="metadata mt-1">
+        <p className="page-subtitle">
           Cybersecurity news and vulnerability intelligence
         </p>
       </header>
 
-      {/* Summary metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <MetricCard
-          label="Loaded CVEs"
-          scope="NVD · last 14 days · partial"
-          href="/threats"
-          value={cveCount}
-          status={threatsStatus}
-        />
-        <MetricCard
-          label="Recent KEV entries"
-          scope="CISA KEV · newest 10"
-          href="/threats"
-          value={kevCount}
-          status={threatsStatus}
-        />
-        <MetricCard
-          label="News items"
-          scope="RSS feeds · latest snapshot"
-          href="/news"
-          value={newsCount}
-          status={newsStatus}
-        />
-      </div>
+      <div className="page-body">
+        {/* Summary metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <MetricCard
+            label="Loaded CVEs"
+            scope="NVD · last 14 days · partial"
+            href="/threats"
+            value={cveCount}
+            status={threatsStatus}
+          />
+          <MetricCard
+            label="Recent KEV entries"
+            scope="CISA KEV · newest 10"
+            href="/threats"
+            value={kevCount}
+            status={threatsStatus}
+          />
+          <MetricCard
+            label="News items"
+            scope="RSS feeds · latest snapshot"
+            href="/news"
+            value={newsCount}
+            status={newsStatus}
+          />
+        </div>
 
-      {/* Latest stories + Recent KEV previews (2:1 on wide screens) */}
-      <div className="briefing-grid">
-        <section className="panel rounded-lg overflow-hidden">
-          <div className="panel-header p-4">
-            <h2 className="section-title">Latest stories</h2>
-          </div>
-          {newsStatus === "loading" && <p className="metadata p-4">Loading…</p>}
-          {newsStatus === "error" && (
-            <p className="metadata p-4">News preview unavailable.</p>
-          )}
-          {newsStatus === "ready" && (
-            <div className="divide-y divide-white/[0.06]">
-              {news?.slice(0, 6).map((item, i) => (
-                <a
-                  key={`${item.link}-${i}`}
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-4 hover:bg-[#0B0F0E]/40 transition-colors group"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 font-medium uppercase tracking-wider">
-                      {item.source}
-                    </span>
-                    <span className="text-[10px] text-gray-500 font-mono">
-                      {formatPublishedAt(item.pubDate)}
-                    </span>
-                  </div>
-                  <h3 className="text-[17px] font-semibold text-gray-100 leading-snug line-clamp-2 group-hover:text-emerald-400 transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-gray-400 line-clamp-2 mt-1 leading-relaxed">
-                    {item.aiSummary || item.snippet}
-                  </p>
-                </a>
-              ))}
+        {/* Latest stories + Recent KEV previews (2:1 on wide screens) */}
+        <div className="briefing-grid">
+          <section className="panel rounded-lg overflow-hidden">
+            <div className="panel-header">
+              <h2 className="section-title">Latest stories</h2>
             </div>
-          )}
-        </section>
+            {newsStatus === "loading" && <p className="metadata p-4">Loading…</p>}
+            {newsStatus === "error" && (
+              <p className="metadata p-4">News preview unavailable.</p>
+            )}
+            {newsStatus === "ready" &&
+              (latestStories.length === 0 ? (
+                <p className="metadata p-4">
+                  No recent stories in the loaded feed.
+                </p>
+              ) : (
+                <div className="divide-y divide-white/[0.06]">
+                  {latestStories.map((item, i) => (
+                    <a
+                      key={`${item.link}-${i}`}
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block p-4 hover:bg-[#0B0F0E]/40 transition-colors group"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 font-medium">
+                          {item.source}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-mono">
+                          {formatPublishedAt(item.pubDate)}
+                        </span>
+                      </div>
+                      <h3 className="story-headline line-clamp-2 group-hover:text-emerald-400 transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-gray-400 line-clamp-2 mt-1 leading-relaxed">
+                        {item.aiSummary || item.snippet}
+                      </p>
+                    </a>
+                  ))}
+                </div>
+              ))}
+          </section>
 
-        <section className="panel rounded-lg overflow-hidden">
-          <div className="panel-header p-4">
-            <h2 className="section-title">Recent KEV entries</h2>
-          </div>
-          {threatsStatus === "loading" && (
-            <p className="metadata p-4">Loading…</p>
-          )}
-          {threatsStatus === "error" && (
-            <p className="metadata p-4">KEV preview unavailable.</p>
-          )}
-          {threatsStatus === "ready" && (
-            <div className="divide-y divide-white/[0.06]">
-              {threats?.kev.slice(0, 5).map((item) => (
-                <Link
-                  key={item.cveID}
-                  href={`/cve/${item.cveID}`}
-                  className="interactive-row block p-4 transition-colors group"
-                >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-link text-xs font-mono">
-                      {item.cveID}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[10px] text-gray-500 font-mono">
-                      {item.dateAdded}
-                      <span
-                        className="text-gray-600 transition-colors group-hover:text-emerald-400"
-                        aria-hidden="true"
-                      >
-                        →
+          <section className="panel rounded-lg overflow-hidden">
+            <div className="panel-header">
+              <h2 className="section-title">Recent KEV entries</h2>
+            </div>
+            {threatsStatus === "loading" && (
+              <p className="metadata p-4">Loading…</p>
+            )}
+            {threatsStatus === "error" && (
+              <p className="metadata p-4">KEV preview unavailable.</p>
+            )}
+            {threatsStatus === "ready" && (
+              <div className="divide-y divide-white/[0.06]">
+                {threats?.kev.slice(0, 5).map((item) => (
+                  <Link
+                    key={item.cveID}
+                    href={`/cve/${item.cveID}`}
+                    className="interactive-row block p-4 transition-colors group"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-link text-xs font-mono">
+                        {item.cveID}
                       </span>
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-300 mb-1">
-                    {item.vendorProject} — {item.product}
-                  </p>
-                  <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">
-                    <span className="text-gray-400">Required: </span>
-                    {item.requiredAction}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          )}
+                      <span className="flex items-center gap-1.5 text-[10px] text-gray-500 font-mono">
+                        {item.dateAdded}
+                        <span
+                          className="text-gray-600 transition-colors group-hover:text-emerald-400"
+                          aria-hidden="true"
+                        >
+                          →
+                        </span>
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-300 mb-1">
+                      {item.vendorProject} — {item.product}
+                    </p>
+                    <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">
+                      <span className="text-gray-400">Required: </span>
+                      {item.requiredAction}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Reported IP sample — compact and low on the page */}
+        <section>
+          <p className="metadata mb-2">
+            Sampled records — not a count of worldwide attacks.
+          </p>
+          <ThreatMap />
+        </section>
+
+        {/* Analytics summary — single useful chart */}
+        <section className="panel rounded-lg overflow-hidden">
+          <div className="panel-header flex items-center justify-between gap-4">
+            <h2 className="section-title">14-day CVE trend</h2>
+            <Link href="/analytics" className="text-link text-xs font-medium shrink-0">
+              View all analytics →
+            </Link>
+          </div>
+          <div className="panel-body">
+            {trendsStatus === "loading" && <p className="metadata">Loading…</p>}
+            {trendsStatus === "error" && (
+              <p className="metadata">Chart unavailable.</p>
+            )}
+            {trendsStatus === "ready" && trends?.dailyTrend && (
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={trends.dailyTrend}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255, 255, 255, 0.05)"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#6B7280", fontSize: 10 }}
+                    tickFormatter={(v) => v.slice(5)}
+                  />
+                  <YAxis
+                    tick={{ fill: "#6B7280", fontSize: 10 }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    itemStyle={{ color: "#D1D5DB" }}
+                    labelStyle={{ color: "#6B7280" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#10B981"
+                    fill="#10B981"
+                    fillOpacity={0.12}
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </section>
       </div>
-
-      {/* Reported IP sample — compact and low on the page */}
-      <section>
-        <p className="metadata mb-2">
-          Sampled records — not a count of worldwide attacks.
-        </p>
-        <ThreatMap />
-      </section>
-
-      {/* Analytics summary — single useful chart */}
-      <section className="panel rounded-lg overflow-hidden">
-        <div className="panel-header p-4 flex items-center justify-between gap-4">
-          <h2 className="section-title">14-day CVE trend</h2>
-          <Link href="/analytics" className="text-link text-xs font-medium shrink-0">
-            View all analytics →
-          </Link>
-        </div>
-        <div className="p-4">
-          {trendsStatus === "loading" && <p className="metadata">Loading…</p>}
-          {trendsStatus === "error" && (
-            <p className="metadata">Chart unavailable.</p>
-          )}
-          {trendsStatus === "ready" && trends?.dailyTrend && (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={trends.dailyTrend}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255, 255, 255, 0.05)"
-                />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: "#6B7280", fontSize: 10 }}
-                  tickFormatter={(v) => v.slice(5)}
-                />
-                <YAxis
-                  tick={{ fill: "#6B7280", fontSize: 10 }}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  contentStyle={TOOLTIP_STYLE}
-                  itemStyle={{ color: "#D1D5DB" }}
-                  labelStyle={{ color: "#6B7280" }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#10B981"
-                  fill="#10B981"
-                  fillOpacity={0.12}
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </section>
-    </div>
+    </>
   );
 }

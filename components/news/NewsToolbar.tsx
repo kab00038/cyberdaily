@@ -117,7 +117,7 @@ export default function NewsToolbar({
         <div className="flex-1 min-w-[200px]">
           <label
             htmlFor="news-search"
-            className="mb-1 block text-xs font-medium text-ui-muted"
+            className="control-label"
           >
             Search
           </label>
@@ -135,7 +135,7 @@ export default function NewsToolbar({
         <div>
           <label
             htmlFor="news-source"
-            className="mb-1 block text-xs font-medium text-ui-muted"
+            className="control-label"
           >
             Source
           </label>
@@ -158,7 +158,7 @@ export default function NewsToolbar({
         <div>
           <label
             htmlFor="news-range"
-            className="mb-1 block text-xs font-medium text-ui-muted"
+            className="control-label"
           >
             Date
           </label>
@@ -182,7 +182,7 @@ export default function NewsToolbar({
         <div>
           <label
             htmlFor="news-sort"
-            className="mb-1 block text-xs font-medium text-ui-muted"
+            className="control-label"
           >
             Sort
           </label>
@@ -205,7 +205,7 @@ export default function NewsToolbar({
           <button
             type="button"
             onClick={clearFilters}
-            className="mb-0.5 text-xs font-mono uppercase tracking-widest text-ui-accent border border-ui-accent/30 rounded px-3 py-2 hover:bg-ui-accent/10 transition-colors"
+            className="mb-0.5 text-xs font-mono text-ui-accent border border-ui-accent/30 rounded px-3 py-2 hover:bg-ui-accent/10 transition-colors"
           >
             Clear filters
           </button>

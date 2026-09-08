@@ -153,7 +153,7 @@ export default function NewsFeed() {
             <button
               type="button"
               onClick={clearFilters}
-              className="text-xs font-mono uppercase tracking-widest text-ui-accent border border-ui-accent/30 rounded px-3 py-2 hover:bg-ui-accent/10 transition-colors"
+              className="text-xs font-mono text-ui-accent border border-ui-accent/30 rounded px-3 py-2 hover:bg-ui-accent/10 transition-colors"
             >
               Clear filters
             </button>
@@ -174,7 +174,7 @@ export default function NewsFeed() {
               <button
                 type="button"
                 onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
-                className="w-full py-3 text-xs font-mono uppercase tracking-widest text-ui-accent border border-ui-accent/30 rounded-lg hover:bg-ui-accent/10 hover:border-ui-accent/50 transition-colors"
+                className="w-full py-3 text-xs font-mono text-ui-accent border border-ui-accent/30 rounded-lg hover:bg-ui-accent/10 hover:border-ui-accent/50 transition-colors"
               >
                 Load more stories
               </button>

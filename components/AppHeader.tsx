@@ -1,6 +1,7 @@
 // components/AppHeader.tsx — Consolidated dashboard header.
 // Shows a mobile-only hamburger that opens the navigation drawer, a page
-// title derived from the current route, and the current UTC time.
+// title derived from the current route, the page-load time in UTC (rendered
+// once at mount, not ticked every second), and a Refresh button.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -22,19 +23,17 @@ export default function AppHeader({
   onToggleMobile: () => void;
 }) {
   const pathname = usePathname();
-  const [now, setNow] = useState<Date | null>(null);
+  // Stable reference clock set once on mount. Nothing renders until after
+  // mount so the server and client markup stay in sync — and it never ticks.
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
 
-  // Single client-side interval started at mount. We render nothing for the
-  // time until after mount so the server and client markup stay in sync.
   useEffect(() => {
-    setNow(new Date());
-    const interval = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(interval);
+    setLoadedAt(new Date());
   }, []);
 
   const title = TITLES[pathname] ?? "Today";
-  const timeLabel = now
-    ? now.toLocaleTimeString("en-US", { timeZone: "UTC", hour12: false })
+  const timeLabel = loadedAt
+    ? loadedAt.toLocaleTimeString("en-US", { timeZone: "UTC", hour12: false })
     : "";
 
   return (
@@ -68,6 +67,26 @@ export default function AppHeader({
         </div>
         <div className="flex items-center gap-4">
           <span className="text-xs text-gray-500 font-mono">{timeLabel} UTC</span>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            aria-label="Refresh page"
+            className="p-2 rounded-lg hover:bg-white/[0.06] text-gray-500 hover:text-gray-200 transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
         </div>
       </div>
     </header>

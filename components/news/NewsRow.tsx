@@ -22,8 +22,8 @@ export default function NewsRow({ item, dateLabel }: NewsRowProps) {
           <span className="numeric">{dateLabel}</span>
         </div>
 
-        <h3 className="text-[17px] font-semibold leading-snug text-ui-text line-clamp-3">
-          <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-link">
+        <h3 className="story-headline line-clamp-3">
+          <a href={item.link} target="_blank" rel="noopener noreferrer">
             {item.title}
             <span className="sr-only"> (opens in a new tab)</span>
           </a>

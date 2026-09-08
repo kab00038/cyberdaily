@@ -69,7 +69,7 @@ export default function CveDetailClient({ id }: { id: string }) {
 
       {status === "loading" && (
         <section className="panel rounded-lg overflow-hidden">
-          <div className="panel-header p-4">
+          <div className="panel-header">
             <h1 className="section-title font-mono text-sm">{id}</h1>
           </div>
           <div className="p-4 sm:p-5 space-y-4" aria-label="Loading CVE details">
@@ -87,7 +87,7 @@ export default function CveDetailClient({ id }: { id: string }) {
 
       {status === "error" && (
         <section className="panel rounded-lg overflow-hidden">
-          <div className="panel-header p-4">
+          <div className="panel-header">
             <h1 className="section-title font-mono text-sm">{id}</h1>
           </div>
           <p role="status" className="p-4 text-sm text-gray-400">
@@ -98,7 +98,7 @@ export default function CveDetailClient({ id }: { id: string }) {
 
       {status === "ready" && data && (
         <section className="panel rounded-lg overflow-hidden">
-          <div className="panel-header p-4">
+          <div className="panel-header">
             <h1 className="section-title font-mono text-sm">{id}</h1>
           </div>
 

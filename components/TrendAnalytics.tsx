@@ -211,8 +211,8 @@ export default function TrendAnalytics() {
           {/* Summary stats — each metric names its dataset/catalog scope */}
           <div className="grid grid-cols-3 gap-4">
             <div className="panel rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-white font-display">{cveCountDisplay}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">
+              <p className="metric-number text-white">{cveCountDisplay}</p>
+              <p className="text-xs text-gray-500">
                 CVEs in loaded dataset
               </p>
               <p className="text-[10px] text-gray-600 mt-1">
@@ -220,8 +220,8 @@ export default function TrendAnalytics() {
               </p>
             </div>
             <div className="panel rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-red-500 font-display">{data.totalKEV}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">
+              <p className="metric-number text-red-500">{data.totalKEV}</p>
+              <p className="text-xs text-gray-500">
                 KEV catalog entries
               </p>
               <p className="text-[10px] text-gray-600 mt-1">
@@ -229,8 +229,8 @@ export default function TrendAnalytics() {
               </p>
             </div>
             <div className="panel rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-emerald-500 font-display">{epssDisplay}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">
+              <p className="metric-number text-emerald-500">{epssDisplay}</p>
+              <p className="text-xs text-gray-500">
                 EPSS coverage
               </p>
               <p className="text-[10px] text-gray-600 mt-1">
