@@ -6,6 +6,35 @@ import { fetchKEVCatalog } from "@/lib/abuse-ch";
 
 export const runtime = "edge";
 
+/**
+ * Build a contiguous range of day bins [start, end] (inclusive) from a
+ * bucket map keyed by YYYY-MM-DD (UTC). Returns an empty array when the
+ * window is missing/invalid.
+ */
+function buildDayBins(
+  start: string | null,
+  end: string | null,
+  buckets: Record<string, number>
+): { date: string; count: number }[] {
+  if (!start || !end) return [];
+  const cursor = new Date(`${start}T00:00:00Z`);
+  const endDate = new Date(`${end}T00:00:00Z`);
+  if (
+    Number.isNaN(cursor.getTime()) ||
+    Number.isNaN(endDate.getTime()) ||
+    cursor > endDate
+  ) {
+    return [];
+  }
+  const bins: { date: string; count: number }[] = [];
+  while (cursor <= endDate) {
+    const day = cursor.toISOString().slice(0, 10);
+    bins.push({ date: day, count: buckets[day] ?? 0 });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return bins;
+}
+
 export async function GET() {
   try {
     const [cves, kev] = await Promise.allSettled([
@@ -68,15 +97,29 @@ export async function GET() {
       else riskBreakdown.LOW++;
     }
 
-    // Daily trend (group CVEs by published date, last 14 days)
-    const now = new Date();
-    const dailyTrend: { date: string; count: number }[] = [];
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0];
-      const count = cveList.filter((c) => c.publishedAt?.startsWith(dateStr)).length;
-      dailyTrend.push({ date: dateStr, count });
+    // Daily trend — bucket items by UTC publication day, then lay a
+    // contiguous bin range over the ACTUAL snapshot window (not "today").
+    const windowStart = cveResult?.windowStart ?? null;
+    const windowEnd = cveResult?.windowEnd ?? null;
+
+    const buckets: Record<string, number> = {};
+    for (const cve of cveList) {
+      if (!cve.publishedAt) continue;
+      const day = cve.publishedAt.slice(0, 10); // YYYY-MM-DD
+      buckets[day] = (buckets[day] ?? 0) + 1;
+    }
+
+    let dailyTrend = buildDayBins(windowStart, windowEnd, buckets);
+    let coverageNote: string | null = null;
+    const hasRecordsInWindow =
+      windowStart !== null && windowEnd !== null
+        ? Object.keys(buckets).some(
+            (day) => day >= windowStart && day <= windowEnd
+          )
+        : false;
+    if (cveList.length === 0 || !hasRecordsInWindow) {
+      dailyTrend = [];
+      coverageNote = "No loaded records cover this period.";
     }
 
     // Top CWEs (from structured cweIds parsed from NVD)
@@ -111,18 +154,24 @@ export async function GET() {
       .slice(0, 8)
       .map(([vendor, count]) => ({ vendor, count }));
 
-    // Derive completeness from the NVDResult.
+    // Coverage: derived from the NVDResult completeness, overridden to
+    // "stale" when the snapshot predates the last 24 h, and "unknown" only
+    // when the NVD fetch errored.
     const nvdError = cveResult?.error ?? null;
-    let completeness: "complete" | "partial" | "unknown" = "unknown";
-    if (nvdError !== null) {
-      completeness = "unknown";
-    } else if (
-      cveResult?.totalResults === null ||
-      cveList.length < (cveResult?.totalResults ?? 0)
-    ) {
-      completeness = "partial";
-    } else {
-      completeness = "complete";
+    let coverage: "complete" | "partial" | "unknown" | "stale" = "unknown";
+    if (cveResult) {
+      if (nvdError !== null) {
+        coverage = "unknown";
+      } else {
+        coverage = cveResult.completeness;
+        const fetchedMs = cveResult.fetchedAt
+          ? Date.parse(cveResult.fetchedAt)
+          : NaN;
+        if (Number.isFinite(fetchedMs)) {
+          const ageHours = (Date.now() - fetchedMs) / 3_600_000;
+          if (ageHours > 24) coverage = "stale";
+        }
+      }
     }
 
     return NextResponse.json(
@@ -132,13 +181,19 @@ export async function GET() {
         attackVectors,
         riskBreakdown,
         dailyTrend,
+        coverageNote,
         topCWEs,
         vendorMentions,
         totalCVEs: cveList.length,
+        totalResults: cveResult?.totalResults ?? null,
         totalKEV: fullCatalog.length,
         epssCoverage: epssScores.size,
-        completeness,
+        coverage,
+        completeness: cveResult?.completeness ?? "unknown",
         nvdError,
+        windowStart,
+        windowEnd,
+        dataFetchedAt: cveResult?.fetchedAt ?? null,
       },
       {
         headers: {

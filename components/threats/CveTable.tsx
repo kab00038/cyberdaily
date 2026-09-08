@@ -156,189 +156,296 @@ export default function CveTable({
   const headerButtonClasses =
     "flex items-center text-[11px] font-semibold uppercase tracking-wider text-gray-400 transition-colors hover:text-gray-200";
 
+  const exploitStateFor = (cve: RiskScoredCVE): ExploitState =>
+    !kevKnown
+      ? "unknown"
+      : knownExploitedIds.has(cve.id)
+        ? "listed"
+        : "not-listed";
+
   return (
-    <table className="min-w-[820px] w-full border-collapse text-left">
-      <caption className="sr-only">
-        Vulnerability list. Each row shows a CVE with its summary, CVSS
-        severity, EPSS probability, known-exploited status, and publication
-        date. Column headers are sortable; select a CVE to expand its details.
-      </caption>
-      <thead>
-        <tr className="border-b border-white/[0.08]">
-          <th
-            scope="col"
-            aria-sort={ariaSortFor("id")}
-            className="sticky left-0 z-10 border-r border-white/[0.06] px-4 py-3"
-            style={{ background: "var(--cd-surface)" }}
-          >
-            <button
-              type="button"
-              className={headerButtonClasses}
-              onClick={() => onSortChange("id")}
-            >
-              CVE
-              <SortGlyph
-                active={sort.column === "id"}
-                direction={sort.direction}
-              />
-            </button>
-          </th>
-          <th scope="col" className="px-4 py-3">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-              Summary
-            </span>
-          </th>
-          <th
-            scope="col"
-            aria-sort={ariaSortFor("cvss")}
-            className="px-4 py-3"
-          >
-            <button
-              type="button"
-              className={headerButtonClasses}
-              onClick={() => onSortChange("cvss")}
-            >
-              Severity
-              <SortGlyph
-                active={sort.column === "cvss"}
-                direction={sort.direction}
-              />
-            </button>
-          </th>
-          <th
-            scope="col"
-            aria-sort={ariaSortFor("epss")}
-            className="px-4 py-3"
-          >
-            <button
-              type="button"
-              className={headerButtonClasses}
-              onClick={() => onSortChange("epss")}
-            >
-              EPSS
-              <SortGlyph
-                active={sort.column === "epss"}
-                direction={sort.direction}
-              />
-            </button>
-          </th>
-          <th
-            scope="col"
-            aria-sort={ariaSortFor("kev")}
-            className="px-4 py-3"
-          >
-            <button
-              type="button"
-              className={headerButtonClasses}
-              onClick={() => onSortChange("kev")}
-            >
-              Known exploited
-              <SortGlyph
-                active={sort.column === "kev"}
-                direction={sort.direction}
-              />
-            </button>
-          </th>
-          <th
-            scope="col"
-            aria-sort={ariaSortFor("published")}
-            className="px-4 py-3"
-          >
-            <button
-              type="button"
-              className={headerButtonClasses}
-              onClick={() => onSortChange("published")}
-            >
-              Published
-              <SortGlyph
-                active={sort.column === "published"}
-                direction={sort.direction}
-              />
-            </button>
-          </th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-white/[0.06]">
+    <div className="vulnerability-browser">
+      <div className="vulnerability-table-view">
+        <table className="vulnerability-table text-left">
+          <caption className="sr-only">
+            Loaded CVEs from NVD with severity, EPSS probability, and CISA KEV
+            membership. Column headers are sortable; select a CVE to expand
+            its details.
+          </caption>
+          <colgroup>
+            <col style={{ width: "10.5rem" }} /> {/* CVE ID */}
+            <col />                                {/* Summary */}
+            <col style={{ width: "7.5rem" }} />   {/* CVSS */}
+            <col style={{ width: "5rem" }} />     {/* EPSS */}
+            <col style={{ width: "8rem" }} />     {/* KEV */}
+            <col style={{ width: "7rem" }} />     {/* Published */}
+          </colgroup>
+          <thead>
+            <tr className="border-b border-white/[0.08]">
+              <th
+                scope="col"
+                aria-sort={ariaSortFor("id")}
+                className="cve-id sticky left-0 z-10 border-r border-white/[0.06]"
+                style={{ background: "var(--cd-surface)" }}
+              >
+                <button
+                  type="button"
+                  className={headerButtonClasses}
+                  onClick={() => onSortChange("id")}
+                >
+                  CVE
+                  <SortGlyph
+                    active={sort.column === "id"}
+                    direction={sort.direction}
+                  />
+                </button>
+              </th>
+              <th scope="col">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                  Summary
+                </span>
+              </th>
+              <th
+                scope="col"
+                aria-sort={ariaSortFor("cvss")}
+                className="numeric"
+              >
+                <button
+                  type="button"
+                  className={headerButtonClasses}
+                  onClick={() => onSortChange("cvss")}
+                >
+                  Severity
+                  <SortGlyph
+                    active={sort.column === "cvss"}
+                    direction={sort.direction}
+                  />
+                </button>
+              </th>
+              <th
+                scope="col"
+                aria-sort={ariaSortFor("epss")}
+                className="numeric"
+              >
+                <button
+                  type="button"
+                  className={headerButtonClasses}
+                  onClick={() => onSortChange("epss")}
+                >
+                  EPSS
+                  <SortGlyph
+                    active={sort.column === "epss"}
+                    direction={sort.direction}
+                  />
+                </button>
+              </th>
+              <th
+                scope="col"
+                aria-sort={ariaSortFor("kev")}
+              >
+                <button
+                  type="button"
+                  className={headerButtonClasses}
+                  onClick={() => onSortChange("kev")}
+                >
+                  Known exploited
+                  <SortGlyph
+                    active={sort.column === "kev"}
+                    direction={sort.direction}
+                  />
+                </button>
+              </th>
+              <th
+                scope="col"
+                aria-sort={ariaSortFor("published")}
+                className="numeric"
+              >
+                <button
+                  type="button"
+                  className={headerButtonClasses}
+                  onClick={() => onSortChange("published")}
+                >
+                  Published
+                  <SortGlyph
+                    active={sort.column === "published"}
+                    direction={sort.direction}
+                  />
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/[0.06]">
+            {sorted.map((cve) => {
+              const expanded = expandedId === cve.id;
+              const exploitState = exploitStateFor(cve);
+
+              return (
+                <Fragment key={cve.id}>
+                  <tr className="align-top">
+                    <td
+                      className="cve-id sticky left-0 z-10 border-r border-white/[0.06]"
+                      style={{ background: "var(--cd-surface)" }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => onToggleExpand(cve.id)}
+                        aria-expanded={expanded}
+                        aria-controls={`cve-details-${cve.id}`}
+                        className="flex items-center gap-1.5 text-left font-mono text-xs text-emerald-400 transition-colors hover:text-emerald-300"
+                      >
+                        <svg
+                          className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                            expanded ? "rotate-90" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                        {cve.id}
+                      </button>
+                    </td>
+                    <td className="summary">
+                      <p className="line-clamp-2 text-xs leading-relaxed text-gray-400">
+                        {cve.description}
+                      </p>
+                    </td>
+                    <td className="numeric">
+                      <SeverityBadge
+                        severity={cve.severity}
+                        score={cve.cvssScore}
+                      />
+                    </td>
+                    <td className="numeric">
+                      <span className="font-mono text-xs text-gray-300">
+                        {cve.epssScore
+                          ? formatProbability(cve.epssScore.epss)
+                          : "Unavailable"}
+                      </span>
+                    </td>
+                    <td>
+                      <ExploitedBadge state={exploitState} />
+                    </td>
+                    <td className="numeric">
+                      <span className="font-mono text-xs text-gray-400">
+                        {formatPublishedAt(cve.publishedAt)}
+                      </span>
+                    </td>
+                  </tr>
+                  {expanded && (
+                    <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+                      <td
+                        id={`cve-details-${cve.id}`}
+                        colSpan={COLUMN_COUNT}
+                        className="p-0"
+                      >
+                        <CveDetails cve={cve} kev={kevById?.get(cve.id)} />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="vulnerability-card-view">
         {sorted.map((cve) => {
           const expanded = expandedId === cve.id;
-          const exploitState: ExploitState = !kevKnown
-            ? "unknown"
-            : knownExploitedIds.has(cve.id)
-              ? "listed"
-              : "not-listed";
+          const exploitState = exploitStateFor(cve);
 
           return (
-            <Fragment key={cve.id}>
-              <tr className="align-top">
-                <td
-                  className="sticky left-0 z-10 border-r border-white/[0.06] px-4 py-3"
-                  style={{ background: "var(--cd-surface)" }}
+            <article
+              className="vulnerability-card"
+              key={cve.id}
+              aria-label={`CVE ${cve.id}`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => onToggleExpand(cve.id)}
+                  aria-expanded={expanded}
+                  aria-controls={`cve-details-card-${cve.id}`}
+                  className="flex items-center gap-1.5 text-left font-mono text-sm text-emerald-400 transition-colors hover:text-emerald-300"
                 >
-                  <button
-                    type="button"
-                    onClick={() => onToggleExpand(cve.id)}
-                    aria-expanded={expanded}
-                    aria-controls={`cve-details-${cve.id}`}
-                    className="flex items-center gap-1.5 text-left font-mono text-xs text-emerald-400 transition-colors hover:text-emerald-300"
+                  <svg
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                      expanded ? "rotate-90" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
-                    <svg
-                      className={`h-3.5 w-3.5 shrink-0 transition-transform ${
-                        expanded ? "rotate-90" : ""
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                    {cve.id}
-                  </button>
-                </td>
-                <td className="px-4 py-3">
-                  <p className="line-clamp-2 text-xs leading-relaxed text-gray-400">
-                    {cve.description}
-                  </p>
-                </td>
-                <td className="px-4 py-3">
-                  <SeverityBadge severity={cve.severity} score={cve.cvssScore} />
-                </td>
-                <td className="px-4 py-3">
-                  <span className="font-mono text-xs text-gray-300">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                  {cve.id}
+                </button>
+                <SeverityBadge severity={cve.severity} score={cve.cvssScore} />
+              </div>
+
+              <p className="mt-2 text-xs leading-relaxed text-gray-400">
+                {cve.description}
+              </p>
+
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+                <div>
+                  <dt className="text-gray-500">EPSS</dt>
+                  <dd className="font-mono text-gray-300">
                     {cve.epssScore
                       ? formatProbability(cve.epssScore.epss)
                       : "Unavailable"}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <ExploitedBadge state={exploitState} />
-                </td>
-                <td className="px-4 py-3">
-                  <span className="font-mono text-xs text-gray-400">
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500">Exploitation</dt>
+                  <dd>
+                    <ExploitedBadge state={exploitState} />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500">Published</dt>
+                  <dd className="font-mono text-gray-400">
                     {formatPublishedAt(cve.publishedAt)}
-                  </span>
-                </td>
-              </tr>
+                  </dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                onClick={() => onToggleExpand(cve.id)}
+                aria-expanded={expanded}
+                aria-controls={`cve-details-card-${cve.id}`}
+                className="mt-3 text-xs font-semibold text-emerald-400 transition-colors hover:text-emerald-300"
+              >
+                {expanded ? "Hide details" : "Details"}
+              </button>
+
               {expanded && (
-                <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                  <td
-                    id={`cve-details-${cve.id}`}
-                    colSpan={COLUMN_COUNT}
-                    className="p-0"
-                  >
-                    <CveDetails cve={cve} kev={kevById?.get(cve.id)} />
-                  </td>
-                </tr>
+                <div
+                  id={`cve-details-card-${cve.id}`}
+                  className="mt-3 border-t border-white/[0.08] pt-3"
+                >
+                  <CveDetails cve={cve} kev={kevById?.get(cve.id)} />
+                </div>
               )}
-            </Fragment>
+            </article>
           );
         })}
-      </tbody>
-    </table>
+      </div>
+    </div>
   );
 }

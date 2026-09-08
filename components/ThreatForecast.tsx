@@ -11,7 +11,7 @@ import CveTable, {
 
 type Completeness = "complete" | "partial" | "unknown";
 type SeverityFilter = "all" | "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
-type ExploitFilter = "all" | "exploited" | "high-critical";
+type ExploitFilter = "all" | "exploited" | "not-listed" | "unknown";
 
 const SEVERITY_OPTIONS: Array<{ value: SeverityFilter; label: string }> = [
   { value: "all", label: "All severities" },
@@ -25,7 +25,8 @@ const SEVERITY_OPTIONS: Array<{ value: SeverityFilter; label: string }> = [
 const EXPLOIT_OPTIONS: Array<{ value: ExploitFilter; label: string }> = [
   { value: "all", label: "All vulnerabilities" },
   { value: "exploited", label: "Known exploited" },
-  { value: "high-critical", label: "High / Critical only" },
+  { value: "not-listed", label: "Not listed" },
+  { value: "unknown", label: "Unknown" },
 ];
 
 // Default priority order: known exploited first, then descending CVSS, then
@@ -48,6 +49,7 @@ export default function ThreatForecast() {
 
   const [query, setQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
+  const [highCriticalOnly, setHighCriticalOnly] = useState(false);
   const [exploitFilter, setExploitFilter] = useState<ExploitFilter>("all");
   const [sort, setSort] = useState<SortState>(PRIORITY_SORT);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -97,16 +99,34 @@ export default function ThreatForecast() {
         return false;
       }
       const sev = normalizeSeverity(cve.severity);
-      if (severityFilter !== "all" && sev !== severityFilter) return false;
+      if (highCriticalOnly) {
+        if (sev !== "HIGH" && sev !== "CRITICAL") return false;
+      } else if (severityFilter !== "all" && sev !== severityFilter) {
+        return false;
+      }
       if (exploitFilter === "exploited" && !knownExploitedIds.has(cve.id)) {
         return false;
       }
-      if (exploitFilter === "high-critical" && sev !== "HIGH" && sev !== "CRITICAL") {
+      if (
+        exploitFilter === "not-listed" &&
+        (!kevKnown || knownExploitedIds.has(cve.id))
+      ) {
+        return false;
+      }
+      if (exploitFilter === "unknown" && kevKnown) {
         return false;
       }
       return true;
     });
-  }, [cves, query, severityFilter, exploitFilter, knownExploitedIds]);
+  }, [
+    cves,
+    query,
+    severityFilter,
+    highCriticalOnly,
+    exploitFilter,
+    knownExploitedIds,
+    kevKnown,
+  ]);
 
   const handleSortChange = (column: SortColumn) => {
     setSort((current) => {
@@ -162,8 +182,8 @@ export default function ThreatForecast() {
       <div className="panel rounded-lg overflow-hidden">
         {/* Search / filter toolbar */}
         <div className="border-b border-white/[0.06] p-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="sm:col-span-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2 lg:col-span-1">
               <label
                 htmlFor="cve-search"
                 className="mb-1 block text-xs text-gray-400"
@@ -180,12 +200,26 @@ export default function ThreatForecast() {
               />
             </div>
             <div>
-              <label
-                htmlFor="severity-filter"
-                className="mb-1 block text-xs text-gray-400"
-              >
-                Severity
-              </label>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <label
+                  htmlFor="severity-filter"
+                  className="block text-xs text-gray-400"
+                >
+                  Severity
+                </label>
+                <button
+                  type="button"
+                  aria-pressed={highCriticalOnly}
+                  onClick={() => setHighCriticalOnly((current) => !current)}
+                  className={`control !min-h-0 rounded-md px-2.5 py-1 text-xs transition-colors ${
+                    highCriticalOnly
+                      ? "border-emerald-500 text-emerald-300"
+                      : "text-gray-300 hover:border-emerald-500/60"
+                  }`}
+                >
+                  High &amp; Critical
+                </button>
+              </div>
               <select
                 id="severity-filter"
                 className="control w-full"

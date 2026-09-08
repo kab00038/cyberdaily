@@ -8,13 +8,13 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { formatChartDate } from "@/lib/format";
+import { DistributionList } from "@/components/ui/DistributionList";
+import { formatChartDate, formatPublishedAt } from "@/lib/format";
 
 interface TrendData {
   severityBreakdown: Record<string, number>;
@@ -24,107 +24,28 @@ interface TrendData {
   topCWEs: { cwe: string; count: number }[];
   vendorMentions: { vendor: string; count: number }[];
   totalCVEs: number;
+  totalResults: number | null;
   totalKEV: number;
   epssCoverage: number;
+  coverage: "complete" | "partial" | "unknown" | "stale";
+  coverageNote: string | null;
   completeness: "complete" | "partial" | "unknown";
   nvdError: string | null;
+  windowStart: string | null;
+  windowEnd: string | null;
+  dataFetchedAt: string | null;
 }
-
-const COLORS = {
-  CRITICAL: "#EF4444",
-  HIGH: "#F97316",
-  MEDIUM: "#F59E0B",
-  LOW: "#10B981",
-  UNKNOWN: "#6B7280",
-};
-
-const ATTACK_VECTOR_COLORS: Record<string, string> = {
-  NETWORK: "#EF4444",
-  LOCAL: "#F97316",
-  ADJACENT: "#F59E0B",
-  PHYSICAL: "#10B981",
-  UNKNOWN: "#6B7280",
-};
-
-const ATTACK_VECTOR_LABELS: Record<string, string> = {
-  NETWORK: "Network",
-  LOCAL: "Local",
-  ADJACENT: "Adjacent",
-  PHYSICAL: "Physical",
-  UNKNOWN: "Unknown",
-};
 
 const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"] as const;
 const ATTACK_VECTOR_ORDER = ["NETWORK", "ADJACENT", "LOCAL", "PHYSICAL", "UNKNOWN"];
 
-interface BarRow {
-  name: string;
-  count: number;
-  percent: number;
-  color: string;
-}
-
-// Horizontal-bar row tick: severity/label (colored) + "count · percent%".
-function RowTick({
-  x,
-  y,
-  payload,
-  rows,
-}: {
-  x?: number;
-  y?: number;
-  payload?: { value?: string };
-  rows: BarRow[];
-}) {
-  const row = rows.find((r) => r.name === payload?.value);
-  return (
-    <g transform={`translate(${x ?? 0},${y ?? 0})`}>
-      <text
-        x={0}
-        y={0}
-        dy={4}
-        fontSize={11}
-        fontWeight={600}
-        fill={row?.color ?? "#D1D5DB"}
-      >
-        {payload?.value}
-      </text>
-      <text
-        x={150}
-        y={0}
-        dy={4}
-        textAnchor="end"
-        fontSize={10}
-        fill="#6B7280"
-        fontFamily="'JetBrains Mono', monospace"
-      >
-        {row ? `${row.count} · ${row.percent.toFixed(1)}%` : ""}
-      </text>
-    </g>
-  );
-}
-
-function BarTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { payload?: BarRow }[];
-}) {
-  if (!active || !payload || payload.length === 0) return null;
-  const row = payload[0].payload;
-  if (!row) return null;
-  return (
-    <div className="panel px-3 py-2 text-xs">
-      <span className="font-semibold" style={{ color: row.color }}>
-        {row.name}
-      </span>
-      <span className="text-gray-400 font-mono ml-2">
-        {row.count} · {row.percent.toFixed(1)}%
-      </span>
-    </div>
-  );
-}
+const SEVERITY_COLORS: Record<string, string> = {
+  CRITICAL: "var(--cd-critical)",
+  HIGH: "var(--cd-high)",
+  MEDIUM: "var(--cd-medium)",
+  LOW: "var(--cd-low)",
+  UNKNOWN: "var(--cd-unknown)",
+};
 
 const tooltipStyle = {
   backgroundColor: "rgba(11, 15, 14, 0.95)",
@@ -133,6 +54,58 @@ const tooltipStyle = {
   fontSize: "12px",
   backdropFilter: "blur(8px)",
 };
+
+// Small banner above the daily trend chart reconciling the chart with the
+// actual snapshot the bins were built from.
+const COVERAGE_TONES: Record<TrendData["coverage"], string> = {
+  complete: "text-gray-300 border-white/[0.06]",
+  partial: "text-amber-300/90 border-amber-500/20 bg-amber-500/[0.04]",
+  stale: "text-orange-300/90 border-orange-500/25 bg-orange-500/[0.05]",
+  unknown: "text-red-300/90 border-red-500/20 bg-red-500/[0.04]",
+};
+
+function CoverageBanner({ data }: { data: TrendData }) {
+  const {
+    coverage,
+    totalCVEs,
+    totalResults,
+    windowStart,
+    windowEnd,
+    dataFetchedAt,
+  } = data;
+  const range =
+    windowStart && windowEnd ? `${windowStart} → ${windowEnd}` : "n/a";
+
+  let message: string;
+  switch (coverage) {
+    case "complete":
+      message = `Showing ${totalCVEs} CVEs published ${range} (UTC). Snapshot fetched ${formatPublishedAt(dataFetchedAt)}.`;
+      break;
+    case "partial":
+      message = `Partial coverage: ${totalCVEs} of ${totalResults ?? "?"} CVEs in window ${range}.`;
+      break;
+    case "stale":
+      message = `Snapshot is from ${formatPublishedAt(dataFetchedAt)} — bins reflect that window, not today's.`;
+      break;
+    case "unknown":
+    default:
+      message = "NVD data could not be loaded.";
+      break;
+  }
+
+  return (
+    <div
+      className={`rounded-lg p-3 text-xs mb-4 border ${COVERAGE_TONES[coverage]}`}
+    >
+      {message}
+      {coverage === "partial" && (
+        <p className="text-gray-400 mt-1">
+          Counts and distributions are based on a partial result set.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function TrendAnalytics() {
   const [data, setData] = useState<TrendData | null>(null);
@@ -193,52 +166,36 @@ export default function TrendAnalytics() {
     );
   }
 
-  const unavailable = data.completeness === "unknown" || data.nvdError !== null;
-  const total = data.totalCVEs || 0;
+  const nvdUnavailable = data.coverage === "unknown";
 
-  const severityRows: BarRow[] = SEVERITY_ORDER.map((key) => {
-    const count = data.severityBreakdown?.[key] || 0;
-    return {
-      name: key,
-      count,
-      percent: total > 0 ? (count / total) * 100 : 0,
-      color: COLORS[key] || "#6B7280",
-    };
-  });
+  const severityRows = SEVERITY_ORDER.map((key) => ({
+    id: key,
+    label: key,
+    count: data.severityBreakdown?.[key] || 0,
+    color: SEVERITY_COLORS[key] ?? "var(--cd-accent)",
+  }));
+  const severityTotal = severityRows.reduce((sum, r) => sum + r.count, 0);
 
-  const attackVectorRows: BarRow[] = ATTACK_VECTOR_ORDER.map((key) => {
-    const count = data.attackVectors?.[key] || 0;
-    return {
-      name: ATTACK_VECTOR_LABELS[key] || key,
-      count,
-      percent: total > 0 ? (count / total) * 100 : 0,
-      color: ATTACK_VECTOR_COLORS[key] || "#6B7280",
-    };
-  });
+  const attackVectorRows = ATTACK_VECTOR_ORDER.map((key) => ({
+    id: key,
+    label: key,
+    count: data.attackVectors?.[key] || 0,
+    color: "var(--cd-accent)",
+  }));
+  const attackVectorTotal = attackVectorRows.reduce((sum, r) => sum + r.count, 0);
 
-  const barChartProps = {
-    layout: "vertical" as const,
-    margin: { top: 0, right: 8, bottom: 0, left: 0 },
-    barCategoryGap: "20%",
-  };
+  // EPSS coverage is reported as "N of M" against the loaded CVE set.
+  const epssCoverageText =
+    data.totalCVEs > 0
+      ? `${data.epssCoverage} of ${data.totalCVEs}`
+      : "0 of 0";
+  const cveCountDisplay = nvdUnavailable ? "Unavailable" : data.totalCVEs;
+  const epssDisplay = nvdUnavailable ? "Unavailable" : epssCoverageText;
 
   return (
     <div className="space-y-6">
-      {/* Dataset scope banner */}
-      {data.completeness === "complete" && (
-        <div className="panel rounded-lg p-3 text-xs text-gray-300 border border-white/[0.06]">
-          Showing {data.totalCVEs} CVEs from NVD · last 14 days · complete dataset
-        </div>
-      )}
-      {data.completeness === "partial" && (
-        <div className="panel rounded-lg p-3 text-xs text-amber-300/90 border border-amber-500/20 bg-amber-500/[0.04]">
-          Showing {data.totalCVEs} CVEs from NVD · last 14 days · partial dataset
-          <p className="text-gray-400 mt-1">
-            Counts and distributions are based on a partial result set.
-          </p>
-        </div>
-      )}
-      {unavailable && (
+      {/* Coverage state gate */}
+      {nvdUnavailable && (
         <div className="panel rounded-lg p-3 text-xs text-red-300/90 border border-red-500/20 bg-red-500/[0.04]">
           NVD data could not be loaded. Analytics are unavailable.
           {data.nvdError && (
@@ -247,94 +204,57 @@ export default function TrendAnalytics() {
         </div>
       )}
 
-      {unavailable ? (
+      {nvdUnavailable ? (
         <p className="metadata">No analytics to display until NVD data is available.</p>
       ) : (
         <>
-          {/* Summary stats */}
+          {/* Summary stats — each metric names its dataset/catalog scope */}
           <div className="grid grid-cols-3 gap-4">
             <div className="panel rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-white font-display">{data.totalCVEs}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Total CVEs</p>
+              <p className="text-2xl font-bold text-white font-display">{cveCountDisplay}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider">
+                CVEs in loaded dataset
+              </p>
+              <p className="text-[10px] text-gray-600 mt-1">
+                NVD · 14-day window
+              </p>
             </div>
             <div className="panel rounded-lg p-4 text-center">
               <p className="text-2xl font-bold text-red-500 font-display">{data.totalKEV}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">CISA KEV</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider">
+                KEV catalog entries
+              </p>
+              <p className="text-[10px] text-gray-600 mt-1">
+                CISA KEV · full catalog
+              </p>
             </div>
             <div className="panel rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-emerald-500 font-display">{data.epssCoverage}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">EPSS Scored</p>
+              <p className="text-2xl font-bold text-emerald-500 font-display">{epssDisplay}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider">
+                EPSS coverage
+              </p>
+              <p className="text-[10px] text-gray-600 mt-1">
+                EPSS scores for loaded CVEs
+              </p>
             </div>
           </div>
 
           {/* Charts grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Severity breakdown — horizontal bars with exact counts */}
+            {/* Severity breakdown — label / bar / value regions */}
             <div className="panel rounded-lg p-4">
               <h3 className="text-sm font-semibold text-gray-200 mb-4">
                 Severity breakdown
               </h3>
-              <ResponsiveContainer width="100%" height={severityRows.length * 42}>
-                <BarChart data={severityRows} {...barChartProps}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255, 255, 255, 0.05)"
-                    horizontal={false}
-                  />
-                  <XAxis type="number" hide />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={170}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={<RowTick rows={severityRows} />}
-                  />
-                  <Tooltip
-                    content={<BarTooltip />}
-                    cursor={{ fill: "rgba(255, 255, 255, 0.03)" }}
-                  />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={18}>
-                    {severityRows.map((row) => (
-                      <Cell key={row.name} fill={row.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <DistributionList rows={severityRows} total={severityTotal} />
             </div>
 
-            {/* Attack vector — horizontal bars with exact counts */}
+            {/* Attack vector — label / bar / value regions */}
             <div className="panel rounded-lg p-4">
               <h3 className="text-sm font-semibold text-gray-200 mb-4">
                 Attack vector
               </h3>
-              <ResponsiveContainer width="100%" height={attackVectorRows.length * 42}>
-                <BarChart data={attackVectorRows} {...barChartProps}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255, 255, 255, 0.05)"
-                    horizontal={false}
-                  />
-                  <XAxis type="number" hide />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={170}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={<RowTick rows={attackVectorRows} />}
-                  />
-                  <Tooltip
-                    content={<BarTooltip />}
-                    cursor={{ fill: "rgba(255, 255, 255, 0.03)" }}
-                  />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={18}>
-                    {attackVectorRows.map((row) => (
-                      <Cell key={row.name} fill={row.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <DistributionList rows={attackVectorRows} total={attackVectorTotal} />
             </div>
 
             {/* Daily CVE trend */}
@@ -342,67 +262,77 @@ export default function TrendAnalytics() {
               <h3 className="text-sm font-semibold text-gray-200 mb-4">
                 CVEs by publication date
               </h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={data.dailyTrend}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255, 255, 255, 0.05)"
-                  />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: "#6B7280", fontSize: 10 }}
-                    tickFormatter={(v) => v.slice(5)}
-                  />
-                  <YAxis tick={{ fill: "#6B7280", fontSize: 10 }} />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    itemStyle={{ color: "#D1D5DB" }}
-                    labelStyle={{ color: "#6B7280" }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="count"
-                    stroke="#10B981"
-                    fill="#10B981"
-                    fillOpacity={0.12}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <CoverageBanner data={data} />
+
+              {data.dailyTrend.length === 0 && data.coverage !== "complete" ? (
+                <p className="py-8 text-center text-xs text-gray-500">
+                  No loaded records cover this period
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={data.dailyTrend}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(255, 255, 255, 0.05)"
+                    />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fill: "#6B7280", fontSize: 10 }}
+                      tickFormatter={(v) => formatChartDate(v).slice(5)}
+                    />
+                    <YAxis tick={{ fill: "#6B7280", fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      itemStyle={{ color: "#D1D5DB" }}
+                      labelStyle={{ color: "#6B7280" }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#10B981"
+                      fill="#10B981"
+                      fillOpacity={0.12}
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
 
               {/* Readable fallback table */}
-              <details className="mt-4">
-                <summary className="cursor-pointer text-xs text-emerald-500 font-mono select-none">
-                  Show data table
-                </summary>
-                <table className="w-full mt-3 text-xs">
-                  <caption className="text-left text-gray-500 mb-2">
-                    CVE count per publication date (UTC)
-                  </caption>
-                  <thead>
-                    <tr className="border-b border-white/[0.06]">
-                      <th className="text-left font-medium text-gray-400 py-1 pr-4">
-                        Date
-                      </th>
-                      <th className="text-right font-medium text-gray-400 py-1">
-                        Count
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-mono">
-                    {data.dailyTrend.map((row) => (
-                      <tr key={row.date} className="border-b border-white/[0.04]">
-                        <td className="py-1 pr-4 text-gray-300">
-                          {formatChartDate(row.date)}
-                        </td>
-                        <td className="py-1 text-right text-gray-500">
-                          {row.count}
-                        </td>
+              {data.dailyTrend.length > 0 && (
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-xs text-emerald-500 font-mono select-none">
+                    Show data table
+                  </summary>
+                  <table className="w-full mt-3 text-xs">
+                    <caption className="text-left text-gray-500 mb-2">
+                      CVE count per publication date (UTC)
+                    </caption>
+                    <thead>
+                      <tr className="border-b border-white/[0.06]">
+                        <th className="text-left font-medium text-gray-400 py-1 pr-4">
+                          Date
+                        </th>
+                        <th className="text-right font-medium text-gray-400 py-1">
+                          Count
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </details>
+                    </thead>
+                    <tbody className="font-mono">
+                      {data.dailyTrend.map((row) => (
+                        <tr key={row.date} className="border-b border-white/[0.04]">
+                          <td className="py-1 pr-4 text-gray-300">
+                            {formatChartDate(row.date)}
+                          </td>
+                          <td className="py-1 text-right text-gray-500">
+                            {row.count}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </details>
+              )}
             </div>
 
             {/* Vendor mentions */}

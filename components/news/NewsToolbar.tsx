@@ -1,43 +1,115 @@
 // components/news/NewsToolbar.tsx
-// Search + filter toolbar for the news feed. Fully controlled by the parent.
+// Search + filter toolbar for the news feed. Filter state lives in the URL
+// (`q`, `source`, `period`, `sort`) so selections survive navigation and are
+// shareable. This component reads the current filter values from the search
+// params and writes changes back via `router.replace` (no history entries per
+// keystroke). The query text is debounced (~300 ms) before hitting the URL.
+//
 // All controls are native form elements with persistent, visible labels so
 // the toolbar is keyboard-navigable and screen-reader friendly.
 
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+
 export interface NewsToolbarProps {
-  query: string;
-  onQueryChange: (q: string) => void;
-  source: string;
-  onSourceChange: (s: string) => void;
-  sources: string[]; // unique source names
-  days: number | null; // null = all time
-  onDaysChange: (d: number | null) => void;
-  totalCount: number;
-  visibleCount: number;
-  onClearFilters: () => void;
+  /** Unique source names to offer in the Source select. */
+  sources: string[];
+  /** "X matching stories · Y loaded" or "Y stories". */
+  resultLabel: string;
+  /** Whether any filter (not sort) is currently active. */
+  hasActiveFilters: boolean;
 }
 
-const DATE_OPTIONS: { value: string; label: string; days: number | null }[] = [
-  { value: "all", label: "All time", days: null },
-  { value: "1", label: "24 hours", days: 1 },
-  { value: "7", label: "7 days", days: 7 },
-  { value: "30", label: "30 days", days: 30 },
+/**
+ * Build a URL string for the given filter updates. Values of `null` or ""
+ * remove the param; anything else sets it. Existing unrelated params are kept.
+ */
+export function buildFilteredUrl(
+  pathname: string,
+  current: URLSearchParams,
+  next: Record<string, string | null>
+): string {
+  const params = new URLSearchParams(current.toString());
+  for (const [key, value] of Object.entries(next)) {
+    if (value === null || value === "") params.delete(key);
+    else params.set(key, value);
+  }
+  const qs = params.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
+
+const PERIOD_OPTIONS: { value: string; label: string }[] = [
+  { value: "all", label: "All loaded stories" },
+  { value: "24", label: "24 hours" },
+  { value: "168", label: "7 days" },
+  { value: "720", label: "30 days" },
 ];
 
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: "recent", label: "Recent" },
+  { value: "source", label: "Source" },
+];
+
+const QUERY_DEBOUNCE_MS = 300;
+
 export default function NewsToolbar({
-  query,
-  onQueryChange,
-  source,
-  onSourceChange,
   sources,
-  days,
-  onDaysChange,
-  totalCount,
-  visibleCount,
-  onClearFilters,
+  resultLabel,
+  hasActiveFilters,
 }: NewsToolbarProps) {
-  const hasActiveFilters = query !== "" || source !== "all" || days !== null;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const q = searchParams.get("q") ?? "";
+  const source = searchParams.get("source") ?? "all";
+  const period = searchParams.get("period"); // hours as string, or null
+  const sort = searchParams.get("sort") ?? "recent";
+
+  // Local copy of the query text so typing stays snappy while the URL update
+  // is debounced. Adopted back from the URL on external changes (back/forward).
+  const [inputValue, setInputValue] = useState(q);
+  const committedRef = useRef(q);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (q !== committedRef.current) {
+      setInputValue(q);
+      committedRef.current = q;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  }, [q]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const updateUrl = (next: Record<string, string | null>) => {
+    router.replace(buildFilteredUrl(pathname, searchParams, next), {
+      scroll: false,
+    });
+  };
+
+  const handleQueryChange = (value: string) => {
+    setInputValue(value);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      committedRef.current = value;
+      updateUrl({ q: value });
+    }, QUERY_DEBOUNCE_MS);
+  };
+
+  const clearFilters = () => {
+    setInputValue("");
+    updateUrl({ q: null, source: null, period: null, sort: null });
+  };
 
   return (
     <div className="space-y-3">
@@ -55,8 +127,8 @@ export default function NewsToolbar({
             className="control w-full"
             placeholder="Search news"
             aria-label="Search news"
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
+            value={inputValue}
+            onChange={(e) => handleQueryChange(e.target.value)}
           />
         </div>
 
@@ -72,7 +144,7 @@ export default function NewsToolbar({
             className="control min-w-[180px]"
             aria-label="Filter by source"
             value={source}
-            onChange={(e) => onSourceChange(e.target.value)}
+            onChange={(e) => updateUrl({ source: e.target.value })}
           >
             <option value="all">All sources</option>
             {sources.map((s) => (
@@ -92,16 +164,36 @@ export default function NewsToolbar({
           </label>
           <select
             id="news-range"
-            className="control min-w-[160px]"
+            className="control min-w-[180px]"
             aria-label="Filter by date range"
-            value={days === null ? "all" : String(days)}
+            value={period ?? "all"}
             onChange={(e) =>
-              onDaysChange(
-                e.target.value === "all" ? null : Number(e.target.value)
-              )
+              updateUrl({ period: e.target.value === "all" ? null : e.target.value })
             }
           >
-            {DATE_OPTIONS.map((opt) => (
+            {PERIOD_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label
+            htmlFor="news-sort"
+            className="mb-1 block text-xs font-medium text-ui-muted"
+          >
+            Sort
+          </label>
+          <select
+            id="news-sort"
+            className="control min-w-[140px]"
+            aria-label="Sort stories"
+            value={sort}
+            onChange={(e) => updateUrl({ sort: e.target.value })}
+          >
+            {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -112,7 +204,7 @@ export default function NewsToolbar({
         {hasActiveFilters && (
           <button
             type="button"
-            onClick={onClearFilters}
+            onClick={clearFilters}
             className="mb-0.5 text-xs font-mono uppercase tracking-widest text-ui-accent border border-ui-accent/30 rounded px-3 py-2 hover:bg-ui-accent/10 transition-colors"
           >
             Clear filters
@@ -121,16 +213,20 @@ export default function NewsToolbar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-ui-muted">
-        <span className="numeric">
-          {visibleCount} of {totalCount} stories
-        </span>
-        {query !== "" && <FilterChip label={`“${query}”`} />}
+        <span className="numeric">{resultLabel}</span>
+        {q !== "" && <FilterChip label={`“${q}”`} />}
         {source !== "all" && <FilterChip label={source} />}
-        {days !== null && (
+        {period !== null && (
           <FilterChip
             label={
-              DATE_OPTIONS.find((o) => o.days === days)?.label ?? `${days} days`
+              PERIOD_OPTIONS.find((o) => o.value === period)?.label ??
+              `${period}h`
             }
+          />
+        )}
+        {sort !== "recent" && (
+          <FilterChip
+            label={SORT_OPTIONS.find((o) => o.value === sort)?.label ?? sort}
           />
         )}
       </div>

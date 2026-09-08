@@ -57,6 +57,34 @@ export function parseTimestamp(
 }
 
 /**
+ * Test whether a publication timestamp falls within a rolling window.
+ *
+ * Always rejects anything that cannot be validated:
+ *   - `null` or unparseable values
+ *   - future-dated items (`publishedMs > nowMs`) — feeds can emit
+ *     clock-skewed or erroneous timestamps, and a story "published in the
+ *     future" should not be treated as fresh or current (FIX-01).
+ *
+ * When `hours` is `null` the time bound is removed, but future and invalid
+ * values are still excluded. A negative or non-finite `hours` rejects
+ * everything.
+ */
+export function isPublishedWithin(
+  publishedAt: string | null,
+  nowMs: number,
+  hours: number | null
+): boolean {
+  if (publishedAt === null) return false;
+  const publishedMs = Date.parse(publishedAt);
+  if (!Number.isFinite(publishedMs)) return false;
+  // Future-dated records are excluded in every mode, including "all time".
+  if (publishedMs > nowMs) return false;
+  if (hours === null) return true;
+  if (hours < 0 || !Number.isFinite(hours)) return false;
+  return publishedMs >= nowMs - hours * 60 * 60 * 1000;
+}
+
+/**
  * Format an EPSS probability (0–1 fraction) for display.
  *
  * Returns "Unavailable" when the value is missing, empty, or out of range.

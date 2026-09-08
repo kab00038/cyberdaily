@@ -115,6 +115,65 @@ html { scroll-padding-top: 5rem; }
 
 .numeric { font-variant-numeric: tabular-nums; }
 
+/* Vulnerability browser — container-aware sizing (FIX-03).
+   The section holding the CVE list is a container query: at >= 61rem the
+   list renders as a constrained fixed-layout table; below that it switches
+   to stacked cards so CVE IDs never wrap or overflow their container. */
+.vulnerability-browser {
+  container-type: inline-size;
+}
+
+.vulnerability-table-view {
+  display: none;
+}
+
+.vulnerability-card-view {
+  display: block;
+}
+
+@container (min-width: 61rem) {
+  .vulnerability-table-view {
+    display: block;
+  }
+  .vulnerability-card-view {
+    display: none;
+  }
+}
+
+.vulnerability-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.vulnerability-table th,
+.vulnerability-table td {
+  padding: 12px;
+  vertical-align: top;
+}
+
+.vulnerability-table .cve-id {
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.vulnerability-table .summary {
+  overflow-wrap: anywhere;
+}
+
+.vulnerability-table .numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.vulnerability-card {
+  padding: 16px;
+  border: 1px solid var(--cd-border);
+  border-radius: 12px;
+  background: var(--cd-surface);
+  margin-bottom: 12px;
+}
+
 /* Standard form control — 44px minimum interactive height */
 .control {
   min-height: 44px;
@@ -146,6 +205,37 @@ html { scroll-padding-top: 5rem; }
 .interactive-row:hover,
 .interactive-row:focus-within {
   background: color-mix(in srgb, var(--cd-raised) 60%, transparent);
+}
+
+/* Community feed rows — shared by the Hacker News and Reddit (OSINT) feeds so
+   headlines, metadata, and row spacing stay uniform across providers. */
+.community-row {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--cd-border);
+}
+.community-row:last-child {
+  border-bottom: 0;
+}
+.community-row h3 {
+  margin: 0 0 6px 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.community-row h3 a {
+  color: var(--cd-text);
+  text-decoration: none;
+}
+.community-row h3 a:hover,
+.community-row h3 a:focus-visible {
+  color: var(--cd-accent);
+  text-decoration: underline;
+}
+.community-row-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+  font-size: 13px;
 }
 
 /* Map marker pulse — one brief expanding ring when a country is selected.
@@ -303,6 +393,51 @@ main {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Horizontal distribution list — each row keeps label, bar, and value in
+   separate grid regions so labels never overlap bars. */
+.distribution-list {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.distribution-row {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 7rem) minmax(2rem, 1fr) 7.5rem;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+}
+.distribution-label {
+  overflow-wrap: anywhere;
+  color: var(--cd-text);
+}
+.distribution-track {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--cd-raised);
+}
+.distribution-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.distribution-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--cd-secondary);
+}
+@media (max-width: 40rem) {
+  .distribution-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .distribution-track { grid-column: 1 / -1; grid-row: 2; }
+  .distribution-value { grid-column: 2; grid-row: 1; }
 }
 
 /* Dashboard briefing — news/KEV previews and compact map (Phase C1).

@@ -2,22 +2,33 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { NewsItem } from "@/lib/rss";
-import { formatPublishedAt } from "@/lib/format";
+import { formatPublishedAt, isPublishedWithin } from "@/lib/format";
 import NewsRow from "@/components/news/NewsRow";
-import NewsToolbar from "@/components/news/NewsToolbar";
+import NewsToolbar, {
+  buildFilteredUrl,
+} from "@/components/news/NewsToolbar";
 
 const PAGE_SIZE = 20;
 const REFRESH_MS = 900000; // 15 min
 
 export default function NewsFeed() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [query, setQuery] = useState("");
-  const [source, setSource] = useState("all");
-  const [days, setDays] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // Stable reference clock set once on mount so server and client agree
+  // during the initial render; not re-ticked every second.
+  const [nowMs, setNowMs] = useState(0);
+
+  useEffect(() => {
+    setNowMs(Date.now());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,10 +58,22 @@ export default function NewsFeed() {
     };
   }, []);
 
+  // Filter state lives in the URL: q, source, period (hours), sort.
+  const query = searchParams.get("q") ?? "";
+  const source = searchParams.get("source") ?? "all";
+  const periodParam = searchParams.get("period");
+  const hours =
+    periodParam !== null &&
+    Number.isFinite(Number(periodParam)) &&
+    Number(periodParam) > 0
+      ? Number(periodParam)
+      : null;
+  const sort = searchParams.get("sort") ?? "recent";
+
   // Reset the pagination window whenever the active filters change.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [query, source, days]);
+  }, [query, source, periodParam, sort]);
 
   const sources = useMemo(
     () =>
@@ -60,18 +83,12 @@ export default function NewsFeed() {
 
   const visibleItems = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const cutoff = days === null ? null : Date.now() - days * 86_400_000;
 
     const filtered = news.filter((item) => {
       if (source !== "all" && item.source !== source) return false;
 
-      if (days !== null) {
-        const ts = item.pubDate ? Date.parse(item.pubDate) : NaN;
-        // Items with invalid/missing pubDate are not "fresh enough" — they
-        // fail the date filter.
-        if (!Number.isFinite(ts)) return false;
-        if ((ts as number) < (cutoff as number)) return false;
-      }
+      // FIX-01: future-dated, invalid, or outside-window items are excluded.
+      if (!isPublishedWithin(item.pubDate, nowMs, hours)) return false;
 
       if (q) {
         const haystack = `${item.title} ${item.snippet} ${item.source}`.toLowerCase();
@@ -86,32 +103,41 @@ export default function NewsFeed() {
       const bTs = b.pubDate ? Date.parse(b.pubDate) : NaN;
       const aValid = Number.isFinite(aTs);
       const bValid = Number.isFinite(bTs);
+      if (sort === "source") {
+        const srcCmp = a.source.localeCompare(b.source);
+        if (srcCmp !== 0) return srcCmp;
+      }
       if (aValid && !bValid) return -1;
       if (!aValid && bValid) return 1;
       if (!aValid && !bValid) return 0;
       return (bTs as number) - (aTs as number);
     });
-  }, [news, source, days, query]);
+  }, [news, source, hours, query, sort, nowMs]);
+
+  const hasActiveFilters = query !== "" || source !== "all" || hours !== null;
 
   const clearFilters = () => {
-    setQuery("");
-    setSource("all");
-    setDays(null);
+    router.replace(
+      buildFilteredUrl(pathname, searchParams, {
+        q: null,
+        source: null,
+        period: null,
+        sort: null,
+      }),
+      { scroll: false }
+    );
   };
+
+  const resultLabel = hasActiveFilters
+    ? `${visibleItems.length} matching stories · ${news.length} loaded`
+    : `${news.length} stories`;
 
   return (
     <div className="space-y-3">
       <NewsToolbar
-        query={query}
-        onQueryChange={setQuery}
-        source={source}
-        onSourceChange={setSource}
         sources={sources}
-        days={days}
-        onDaysChange={setDays}
-        totalCount={news.length}
-        visibleCount={Math.min(visibleCount, visibleItems.length)}
-        onClearFilters={clearFilters}
+        resultLabel={resultLabel}
+        hasActiveFilters={hasActiveFilters}
       />
 
       <div aria-busy={loading || undefined}>

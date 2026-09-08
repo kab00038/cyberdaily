@@ -238,13 +238,23 @@ export default function DashboardSection() {
           {threatsStatus === "ready" && (
             <div className="divide-y divide-white/[0.06]">
               {threats?.kev.slice(0, 5).map((item) => (
-                <div key={item.cveID} className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs font-mono text-emerald-500">
+                <Link
+                  key={item.cveID}
+                  href={`/cve/${item.cveID}`}
+                  className="interactive-row block p-4 transition-colors group"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-link text-xs font-mono">
                       {item.cveID}
                     </span>
-                    <span className="text-[10px] text-gray-500 font-mono">
+                    <span className="flex items-center gap-1.5 text-[10px] text-gray-500 font-mono">
                       {item.dateAdded}
+                      <span
+                        className="text-gray-600 transition-colors group-hover:text-emerald-400"
+                        aria-hidden="true"
+                      >
+                        →
+                      </span>
                     </span>
                   </div>
                   <p className="text-xs text-gray-300 mb-1">
@@ -254,7 +264,7 @@ export default function DashboardSection() {
                     <span className="text-gray-400">Required: </span>
                     {item.requiredAction}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           )}

@@ -60,7 +60,7 @@ export default function HackerNewsFeed() {
   return (
     <div className="panel rounded-lg overflow-hidden">
       <div className="panel-header p-4">
-        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-white flex items-center gap-2 uppercase tracking-widest">
           <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2L2 22h20L12 2zm0 3.5L18.5 20H5.5L12 5.5z" />
           </svg>
@@ -74,59 +74,49 @@ export default function HackerNewsFeed() {
         <p className="p-4 text-sm text-gray-500">No matching discussions in this period.</p>
       ) : (
         <>
-          <div className="divide-y divide-white/[0.06]">
+          <div className="px-4">
             {stories.slice(0, 10).map((story, i) => (
-              <a
+              <article
                 key={`${story.url}-${i}`}
-                href={story.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-4 hover:bg-[#0B0F0E]/50 transition-all duration-200 group"
+                className="community-row interactive-row"
               >
-                <p className="text-sm text-gray-300 line-clamp-2 mb-2 group-hover:text-emerald-400 transition-colors">
-                  {story.title}
+                <h3>
+                  <a
+                    href={story.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {story.title}
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </h3>
+                <p className="metadata">
+                  {formatPublishedAt(story.publishedAt)} · {story.points} points ·{" "}
+                  {story.comments} comments
                 </p>
-                <div className="flex items-center gap-3 text-[10px] text-gray-500 font-mono uppercase tracking-wider">
-                  <span className="flex items-center gap-1 text-emerald-500">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 4l-8 16h16L12 4z" />
-                    </svg>
-                    {story.points}
-                  </span>
-                  <span>{story.comments} comments</span>
-                  <span className="metadata">{formatPublishedAt(story.publishedAt)}</span>
-                  {story.url === story.hnUrl ? (
+                <div className="community-row-actions">
+                  {story.url !== story.hnUrl ? (
                     <a
-                      href={story.hnUrl}
+                      href={story.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-ui-accent hover:text-emerald-400"
+                      className="text-link"
                     >
-                      View discussion
+                      Read article
+                      <span className="sr-only"> (opens in a new tab)</span>
                     </a>
-                  ) : (
-                    <>
-                      <a
-                        href={story.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-ui-accent hover:text-emerald-400"
-                      >
-                        Read article
-                      </a>
-                      <span>·</span>
-                      <a
-                        href={story.hnUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-ui-accent hover:text-emerald-400"
-                      >
-                        View discussion
-                      </a>
-                    </>
-                  )}
+                  ) : null}
+                  <a
+                    href={story.hnUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-link"
+                  >
+                    View discussion
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
                 </div>
-              </a>
+              </article>
             ))}
           </div>
           <a
@@ -135,7 +125,7 @@ export default function HackerNewsFeed() {
             rel="noopener noreferrer"
             className="block w-full py-3 text-xs font-mono uppercase tracking-widest text-ui-accent border-t border-white/[0.06] text-center hover:bg-emerald-500/10 transition-colors"
           >
-            View on Hacker News
+            View more discussions
           </a>
         </>
       )}
