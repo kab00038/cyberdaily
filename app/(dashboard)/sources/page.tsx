@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: "Sources — CyberDaily" };
 // Always render with fresh health — the probes themselves ride the fetch
 // data cache, so upstream load stays bounded by the per-source cadences.
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 const SECTIONS: {
   category: SourceStatus["category"];
