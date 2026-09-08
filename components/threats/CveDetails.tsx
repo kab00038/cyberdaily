@@ -7,11 +7,18 @@ import type { RiskScoredCVE } from "@/lib/risk-scoring";
 import type { KEVItem } from "@/lib/abuse-ch";
 import { formatPercentile, formatProbability } from "@/lib/format";
 import SeverityBadge from "@/components/ui/SeverityBadge";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface CveDetailsProps {
   cve: RiskScoredCVE;
   /** Full KEV catalog entry when the CVE is known-exploited. */
   kev?: KEVItem;
+  /**
+   * Render the CVE ID header (with a copy button) at the top of the panel.
+   * Disabled when the caller already displays the ID — e.g. the detail page's
+   * own panel header.
+   */
+  showIdHeader?: boolean;
 }
 
 const ATTACK_VECTORS: Record<string, string> = {
@@ -59,7 +66,7 @@ function Metric({
   );
 }
 
-export default function CveDetails({ cve, kev }: CveDetailsProps) {
+export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetailsProps) {
   const incomplete =
     cve.cvssScore === null && (cve.epssScore === undefined || cve.epssScore === null);
   const epss = cve.epssScore;
@@ -70,6 +77,15 @@ export default function CveDetails({ cve, kev }: CveDetailsProps) {
 
   return (
     <div className="p-4 text-sm sm:p-5">
+      {showIdHeader && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+          <h4 className="font-mono text-sm font-semibold text-gray-100">
+            {cve.id}
+          </h4>
+          <CopyButton value={cve.id} ariaLabel="Copy CVE ID to clipboard" />
+        </div>
+      )}
+
       {incomplete && (
         <p
           role="status"

@@ -30,7 +30,9 @@ export default function StatsBar() {
         const threatmap = await threatmapRes.json();
 
         setStats({
-          attacksToday: threatmap.length || 0,
+          attacksToday:
+            (Array.isArray(threatmap) ? threatmap : threatmap?.items)?.length ||
+            0,
           newCVEs: threats.cves?.length || 0,
           kevAdditions: threats.kev?.length || 0,
           sourcesMonitored: 6,

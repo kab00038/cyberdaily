@@ -53,19 +53,32 @@ export default function ThreatMap() {
   const mapAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // A fresh controller per fetch cycle so the cleanup abort never kills an
+    // in-flight request that a later interval tick started.
+    let controller: AbortController | null = null;
+
     async function fetchThreats() {
+      controller = new AbortController();
       try {
-        const res = await fetch("/api/threatmap");
+        const res = await fetch("/api/threatmap", {
+          signal: controller.signal,
+        });
         const data = await res.json();
-        setThreats(data);
+        if (controller.signal.aborted) return;
+        // `/api/threatmap` returns `{ items, generatedAt, sourceMeta }`.
+        setThreats(Array.isArray(data) ? data : (data?.items ?? []));
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("Failed to fetch threat map:", error);
       }
     }
 
     fetchThreats();
     const interval = setInterval(fetchThreats, 300000); // 5 min
-    return () => clearInterval(interval);
+    return () => {
+      controller?.abort();
+      clearInterval(interval);
+    };
   }, []);
 
   const clusters = useMemo<CountryCluster[]>(() => {

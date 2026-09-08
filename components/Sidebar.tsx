@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navItems } from "@/components/navigation";
+import SourceHealthIndicator from "@/components/SourceHealthIndicator";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -80,20 +81,9 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
         })}
       </nav>
 
-      {/* Status indicator */}
+      {/* Status indicator — evidence-backed source health, not a static badge */}
       <div className="absolute bottom-5 left-0 right-0 px-5">
-        {!collapsed && (
-          <div className="panel p-3 flex items-center gap-3">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-            </span>
-            <div>
-              <p className="text-[10px] text-gray-500">Live monitoring</p>
-              <p className="text-[10px] text-emerald-500 font-mono">Operational</p>
-            </div>
-          </div>
-        )}
+        {!collapsed && <SourceHealthIndicator variant="panel" />}
       </div>
     </>
   );

@@ -19,29 +19,46 @@ export default function HackerNewsFeed() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    // A fresh controller per fetch cycle so the cleanup abort never kills an
+    // in-flight request that a later interval tick started.
+    let controller: AbortController | null = null;
+
     async function fetchStories() {
+      controller = new AbortController();
       try {
-        const res = await fetch("/api/hackernews");
+        const res = await fetch("/api/hackernews", {
+          signal: controller.signal,
+        });
         const data = await res.json();
-        if (data && !Array.isArray(data)) {
+        if (controller.signal.aborted) return;
+        // `/api/hackernews` returns `{ items, generatedAt, sourceMeta }`;
+        // tolerate a bare array from older caches.
+        const items =
+          Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+        if (items.length === 0 && !Array.isArray(data) && !Array.isArray(data?.items)) {
+          // Malformed response: flag it but preserve previously loaded stories.
           setError(true);
-          setStories([]);
         } else {
           setError(false);
-          setStories(data);
+          setStories(items);
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("Failed to fetch HN stories:", err);
+        if (controller.signal.aborted) return;
+        // Preserve previously loaded stories on a refresh failure.
         setError(true);
-        setStories([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchStories();
     const interval = setInterval(fetchStories, 900000); // 15 min
-    return () => clearInterval(interval);
+    return () => {
+      controller?.abort();
+      clearInterval(interval);
+    };
   }, []);
 
   if (loading) {
@@ -68,12 +85,17 @@ export default function HackerNewsFeed() {
         </h3>
         <p className="metadata mt-1">Security discussions from Hacker News</p>
       </div>
-      {error ? (
+      {error && stories.length === 0 ? (
         <p className="p-4 text-sm text-gray-500">Unable to load Hacker News discussions</p>
       ) : stories.length === 0 ? (
         <p className="p-4 text-sm text-gray-500">No matching discussions in this period.</p>
       ) : (
         <>
+          {error && (
+            <p className="px-4 pt-3 text-xs text-amber-300/90">
+              Refresh failed. Showing last successful update.
+            </p>
+          )}
           <div className="px-4">
             {stories.slice(0, 10).map((story, i) => (
               <article

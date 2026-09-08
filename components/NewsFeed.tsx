@@ -1,7 +1,7 @@
 // components/NewsFeed.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { NewsItem } from "@/lib/rss";
 import { formatPublishedAt, isPublishedWithin } from "@/lib/format";
@@ -19,9 +19,19 @@ export default function NewsFeed() {
   const searchParams = useSearchParams();
 
   const [news, setNews] = useState<NewsItem[]>([]);
+  // Incoming items that arrived after a refresh but aren't shown yet, so the
+  // list doesn't shuffle under a user mid-reading. Staged until they Refresh.
+  const [pendingNews, setPendingNews] = useState<NewsItem[] | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // Count of items the user has "seen" (committed to `news`). Used to decide
+  // whether a newer fetch actually contains new stories worth announcing.
+  const seenCountRef = useRef(0);
+  // Distinguishes the first successful load (render immediately) from a later
+  // refresh where new items arriving should trigger the banner instead.
+  const initializedRef = useRef(false);
   // Stable reference clock set once on mount so server and client agree
   // during the initial render; not re-ticked every second.
   const [nowMs, setNowMs] = useState(0);
@@ -31,32 +41,70 @@ export default function NewsFeed() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    // A fresh controller per fetch cycle so the cleanup abort never kills an
+    // in-flight request that a later interval tick started.
+    let controller: AbortController | null = null;
 
     async function fetchNews() {
+      controller = new AbortController();
       try {
-        const res = await fetch("/api/news");
+        const res = await fetch("/api/news", { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (!cancelled) {
-          setNews(data);
-          setError(false);
+        if (controller.signal.aborted) return;
+        setError(false);
+        // `/api/news` returns `{ items, generatedAt, sourceMeta }`; tolerate
+        // a bare array too so older caches keep working.
+        const items = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.items)
+            ? data.items
+            : [];
+
+        if (!initializedRef.current) {
+          // First successful load: show it right away.
+          initializedRef.current = true;
+          seenCountRef.current = items.length;
+          setNews(items);
+        } else if (items.length > seenCountRef.current) {
+          // New stories arrived during a refresh: offer a refresh instead of
+          // shuffling the content under the reader.
+          setPendingNews(items);
+          setPendingCount(items.length - seenCountRef.current);
+        } else {
+          // Same count (or fewer): apply in place — nothing new to announce.
+          seenCountRef.current = items.length;
+          setNews(items);
+          setPendingNews(null);
+          setPendingCount(0);
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("Failed to fetch news:", err);
-        if (!cancelled) setError(true);
+        if (controller.signal.aborted) return;
+        // Preserve previously loaded content on a refresh failure.
+        setError(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchNews();
     const interval = setInterval(fetchNews, REFRESH_MS);
     return () => {
-      cancelled = true;
+      controller?.abort();
       clearInterval(interval);
     };
   }, []);
+
+  // Apply a staged "New stories available" update on demand.
+  const applyPending = () => {
+    if (!pendingNews) return;
+    seenCountRef.current = pendingNews.length;
+    setNews(pendingNews);
+    setPendingNews(null);
+    setPendingCount(0);
+  };
 
   // Filter state lives in the URL: q, source, period (hours), sort.
   const query = searchParams.get("q") ?? "";
@@ -139,6 +187,26 @@ export default function NewsFeed() {
         resultLabel={resultLabel}
         hasActiveFilters={hasActiveFilters}
       />
+
+      {pendingCount > 0 && pendingNews && !loading && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-between gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2.5 text-sm text-ui-text"
+        >
+          <span>
+            {pendingCount} new {pendingCount === 1 ? "story" : "stories"}{" "}
+            available. Refresh to view.
+          </span>
+          <button
+            type="button"
+            onClick={applyPending}
+            className="shrink-0 text-xs font-mono text-ui-accent border border-ui-accent/30 rounded px-3 py-1.5 hover:bg-ui-accent/10 transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+      )}
 
       <div aria-busy={loading || undefined}>
         {loading ? (

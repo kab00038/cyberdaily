@@ -106,25 +106,26 @@ export default function DashboardSection() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    // Cancel the mount fetch if the dashboard unmounts (e.g. navigation).
+    const controller = new AbortController();
 
     async function fetchDashboardData() {
       const [threatsRes, newsRes, trendsRes] = await Promise.allSettled([
-        fetch("/api/threats").then((res) => {
+        fetch("/api/threats", { signal: controller.signal }).then((res) => {
           if (!res.ok) throw new Error(`threats ${res.status}`);
           return res.json();
         }),
-        fetch("/api/news").then((res) => {
+        fetch("/api/news", { signal: controller.signal }).then((res) => {
           if (!res.ok) throw new Error(`news ${res.status}`);
           return res.json();
         }),
-        fetch("/api/trends").then((res) => {
+        fetch("/api/trends", { signal: controller.signal }).then((res) => {
           if (!res.ok) throw new Error(`trends ${res.status}`);
           return res.json();
         }),
       ]);
 
-      if (cancelled) return;
+      if (controller.signal.aborted) return;
 
       if (threatsRes.status === "fulfilled") {
         setThreats(threatsRes.value as ThreatsData);
@@ -134,7 +135,10 @@ export default function DashboardSection() {
       }
 
       if (newsRes.status === "fulfilled") {
-        setNews(newsRes.value as NewsPreviewItem[]);
+        const newsPayload = newsRes.value as
+          | NewsPreviewItem[]
+          | { items: NewsPreviewItem[] };
+        setNews(Array.isArray(newsPayload) ? newsPayload : newsPayload.items ?? []);
         setNewsStatus("ready");
       } else {
         setNewsStatus("error");
@@ -150,7 +154,7 @@ export default function DashboardSection() {
 
     fetchDashboardData();
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, []);
 

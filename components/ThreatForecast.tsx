@@ -55,10 +55,16 @@ export default function ThreatForecast() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
+    // A fresh controller per fetch cycle so the cleanup abort never kills an
+    // in-flight request that a later interval tick started.
+    let controller: AbortController | null = null;
+
     async function fetchThreats() {
+      controller = new AbortController();
       try {
-        const res = await fetch("/api/threats");
+        const res = await fetch("/api/threats", { signal: controller.signal });
         const data = await res.json();
+        if (controller.signal.aborted) return;
         setCves(data.cves || []);
         setKevCatalog(data.kev || []);
         setCompleteness(data.completeness || "complete");
@@ -67,15 +73,20 @@ export default function ThreatForecast() {
         // membership is genuinely unknown rather than "not listed".
         setKevKnown((data.kevCatalogSize ?? 0) > 0);
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("Failed to fetch threats:", error);
+        // Preserve previously loaded CVEs on a refresh failure.
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchThreats();
     const interval = setInterval(fetchThreats, 3600000); // 1 hour
-    return () => clearInterval(interval);
+    return () => {
+      controller?.abort();
+      clearInterval(interval);
+    };
   }, []);
 
   const knownExploitedIds = useMemo(

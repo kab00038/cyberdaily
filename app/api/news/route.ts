@@ -1,13 +1,15 @@
 // app/api/news/route.ts
 import { NextResponse } from "next/server";
-import { fetchRSSFeeds } from "@/lib/rss";
+import { fetchRSSFeedsWithStatus } from "@/lib/rss";
 import { summarizeBatch, AISummary } from "@/lib/ai";
+import { newsSourceStatuses } from "@/lib/sources";
 
 export const runtime = "edge";
 
 export async function GET() {
   try {
-    const news = await fetchRSSFeeds();
+    const generatedAt = new Date().toISOString();
+    const { items: news, feeds } = await fetchRSSFeedsWithStatus();
 
     // Fire AI enrichment in parallel; do NOT block the response on the full batch.
     const summariesPromise = summarizeBatch(
@@ -40,11 +42,18 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(enrichedNews, {
-      headers: {
-        "Cache-Control": "public, s-maxage=900, stale-while-revalidate=450",
+    return NextResponse.json(
+      {
+        items: enrichedNews,
+        generatedAt,
+        sourceMeta: newsSourceStatuses(feeds),
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=900, stale-while-revalidate=450",
+        },
+      }
+    );
   } catch (error) {
     console.error("News API error:", error);
     return NextResponse.json({ error: "Failed to fetch news" }, { status: 500 });

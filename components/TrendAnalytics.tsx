@@ -113,26 +113,33 @@ export default function TrendAnalytics() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    // A fresh controller per fetch cycle so the cleanup abort never kills an
+    // in-flight request that a later interval tick started.
+    let controller: AbortController | null = null;
 
     async function fetchTrends() {
+      controller = new AbortController();
       try {
-        const res = await fetch("/api/trends");
+        const res = await fetch("/api/trends", { signal: controller.signal });
         if (!res.ok) throw new Error(`trends ${res.status}`);
         const trendData = await res.json();
-        if (!cancelled) setData(trendData);
+        if (controller.signal.aborted) return;
+        setData(trendData);
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("Failed to fetch trends:", err);
-        if (!cancelled) setError(true);
+        if (controller.signal.aborted) return;
+        // Keep previously loaded analytics visible on a refresh failure.
+        setError(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchTrends();
     const interval = setInterval(fetchTrends, 3600000); // 1 hour
     return () => {
-      cancelled = true;
+      controller?.abort();
       clearInterval(interval);
     };
   }, []);
@@ -150,7 +157,9 @@ export default function TrendAnalytics() {
     );
   }
 
-  if (error) {
+  // A refresh failure should not hide previously loaded analytics. Only fall
+  // back to the full error panel when there is no data to show.
+  if (error && !data) {
     return (
       <div className="panel rounded-lg p-4 text-xs text-gray-400 border border-white/[0.06]">
         Analytics could not be loaded. Please try again later.
@@ -194,6 +203,15 @@ export default function TrendAnalytics() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="panel rounded-lg p-3 text-xs text-amber-300/90 border border-amber-500/20 bg-amber-500/[0.04]">
+          Refresh failed. Showing last successful update
+          {data.dataFetchedAt
+            ? ` from ${formatPublishedAt(data.dataFetchedAt)}.`
+            : "."}
+        </div>
+      )}
+
       {/* Coverage state gate */}
       {nvdUnavailable && (
         <div className="panel rounded-lg p-3 text-xs text-red-300/90 border border-red-500/20 bg-red-500/[0.04]">

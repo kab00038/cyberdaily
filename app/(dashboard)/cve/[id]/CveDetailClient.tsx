@@ -7,7 +7,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import CveDetails from "@/components/threats/CveDetails";
+import CopyButton from "@/components/ui/CopyButton";
 import { calculateRiskScore } from "@/lib/risk-scoring";
+import { formatPublishedAt } from "@/lib/format";
 import type { CVEItem } from "@/lib/nvd";
 import type { KEVItem } from "@/lib/abuse-ch";
 import type { EPSSScore } from "@/lib/epss";
@@ -63,14 +65,32 @@ export default function CveDetailClient({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
-      <Link href="/threats" className="text-link text-sm">
-        ← Back to Vulnerabilities
+      <Link
+        href="/threats"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-ui-accent transition-colors hover:text-emerald-300"
+      >
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        Back to Vulnerabilities
       </Link>
 
       {status === "loading" && (
         <section className="panel rounded-lg overflow-hidden">
-          <div className="panel-header">
+          <div className="panel-header flex flex-wrap items-center justify-between gap-3">
             <h1 className="section-title font-mono text-sm">{id}</h1>
+            <CopyButton value={id} ariaLabel="Copy CVE ID to clipboard" />
           </div>
           <div className="p-4 sm:p-5 space-y-4" aria-label="Loading CVE details">
             <div className="h-4 w-full rounded bg-white/[0.08] animate-pulse" />
@@ -87,8 +107,9 @@ export default function CveDetailClient({ id }: { id: string }) {
 
       {status === "error" && (
         <section className="panel rounded-lg overflow-hidden">
-          <div className="panel-header">
+          <div className="panel-header flex flex-wrap items-center justify-between gap-3">
             <h1 className="section-title font-mono text-sm">{id}</h1>
+            <CopyButton value={id} ariaLabel="Copy CVE ID to clipboard" />
           </div>
           <p role="status" className="p-4 text-sm text-gray-400">
             Failed to load details for this CVE. Please try again.
@@ -98,8 +119,12 @@ export default function CveDetailClient({ id }: { id: string }) {
 
       {status === "ready" && data && (
         <section className="panel rounded-lg overflow-hidden">
-          <div className="panel-header">
+          <div className="panel-header flex flex-wrap items-center justify-between gap-3">
             <h1 className="section-title font-mono text-sm">{id}</h1>
+            <CopyButton
+              value={data.cve?.id ?? data.kev?.cveID ?? id}
+              ariaLabel="Copy CVE ID to clipboard"
+            />
           </div>
 
           {data.cve !== null ? (
@@ -110,6 +135,7 @@ export default function CveDetailClient({ id }: { id: string }) {
                 data.kev ?? undefined
               )}
               kev={data.kev ?? undefined}
+              showIdHeader={false}
             />
           ) : data.kev !== null ? (
             <div className="p-4 text-sm sm:p-5">
@@ -117,8 +143,12 @@ export default function CveDetailClient({ id }: { id: string }) {
                 role="status"
                 className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
               >
-                This CVE is not in the currently loaded NVD dataset. Details
-                below come from CISA KEV.
+                <span className="font-semibold text-amber-100">
+                  Limited information
+                </span>{" "}
+                — this CVE is in CISA&apos;s Known Exploited Vulnerabilities
+                catalog but not in the currently loaded NVD dataset. Details
+                below are from CISA KEV.
               </p>
 
               <dl className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
@@ -167,7 +197,7 @@ export default function CveDetailClient({ id }: { id: string }) {
                   href={`https://nvd.nist.gov/vuln/detail/${id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-link"
+                  className="inline-block rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20"
                 >
                   Open NVD record
                   <span className="sr-only"> (opens in a new tab)</span>
@@ -188,6 +218,11 @@ export default function CveDetailClient({ id }: { id: string }) {
               </p>
             </div>
           )}
+
+          <p className="border-t border-white/[0.06] px-4 py-3 text-[11px] text-gray-500 sm:px-5">
+            Fetched {formatPublishedAt(data.fetchedAt)} · Refresh page for new
+            data.
+          </p>
         </section>
       )}
     </div>

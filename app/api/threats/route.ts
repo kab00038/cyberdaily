@@ -4,11 +4,13 @@ import { fetchCVELatest } from "@/lib/nvd";
 import { fetchKEVCatalog } from "@/lib/abuse-ch";
 import { fetchEPSSScores } from "@/lib/epss";
 import { calculateRiskScore } from "@/lib/risk-scoring";
+import type { SourceStatus } from "@/lib/sources";
 
 export const runtime = "edge";
 
 export async function GET() {
   try {
+    const generatedAt = new Date().toISOString();
     const [cves, kev] = await Promise.allSettled([
       fetchCVELatest(),
       fetchKEVCatalog(),
@@ -50,6 +52,51 @@ export async function GET() {
       completeness = "complete";
     }
 
+    const newestEpssDate = Array.from(epssScores.values()).reduce<string | null>(
+      (latest, score) =>
+        !score.date || (latest && score.date <= latest) ? latest : score.date,
+      null
+    );
+
+    const sourceMeta: SourceStatus[] = [
+      {
+        id: "nvd-cve-2.0",
+        label: "NVD CVE 2.0",
+        category: "vulnerabilities",
+        status: nvdError === null ? "ok" : "error",
+        lastSuccessfulFetchAt:
+          nvdError === null ? (cveResult?.fetchedAt ?? null) : null,
+        upstreamUpdatedAt: cveResult?.windowEnd ?? null,
+        count: cveList.length,
+        message: nvdError ?? undefined,
+      },
+      {
+        id: "cisa-kev",
+        label: "CISA KEV",
+        category: "vulnerabilities",
+        status: fullCatalog.length > 0 ? "ok" : "error",
+        lastSuccessfulFetchAt:
+          fullCatalog.length > 0 ? generatedAt : null,
+        upstreamUpdatedAt: fullCatalog[0]?.dateAdded ?? null,
+        count: fullCatalog.length,
+        message:
+          fullCatalog.length > 0 ? undefined : "Catalog empty or fetch failed",
+      },
+      {
+        id: "first-epss",
+        label: "FIRST EPSS",
+        category: "vulnerabilities",
+        status: epssScores.size > 0 ? "ok" : "error",
+        lastSuccessfulFetchAt: epssScores.size > 0 ? generatedAt : null,
+        upstreamUpdatedAt: newestEpssDate,
+        count: epssScores.size,
+        message:
+          epssScores.size > 0
+            ? undefined
+            : "No EPSS scores returned for loaded CVEs",
+      },
+    ];
+
     return NextResponse.json(
       {
         cves: scoredCVEs,
@@ -61,6 +108,8 @@ export async function GET() {
         epssCount: epssScores.size,
         completeness,
         nvdError,
+        generatedAt,
+        sourceMeta,
       },
       {
         headers: {

@@ -1,11 +1,13 @@
 // components/AppHeader.tsx — Consolidated dashboard header.
 // Shows a mobile-only hamburger that opens the navigation drawer, a page
 // title derived from the current route, the page-load time in UTC (rendered
-// once at mount, not ticked every second), and a Refresh button.
+// once at mount, not ticked every second), a compact source-health indicator,
+// and a Refresh button.
 "use client";
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import SourceHealthIndicator from "@/components/SourceHealthIndicator";
 
 const TITLES: Record<string, string> = {
   "/": "Today",
@@ -13,6 +15,7 @@ const TITLES: Record<string, string> = {
   "/threats": "Vulnerabilities",
   "/community": "Community",
   "/analytics": "Analytics",
+  "/sources": "Sources",
 };
 
 export default function AppHeader({
@@ -66,6 +69,7 @@ export default function AppHeader({
           </h1>
         </div>
         <div className="flex items-center gap-4">
+          <SourceHealthIndicator variant="compact" />
           <span className="text-xs text-gray-500 font-mono">{timeLabel} UTC</span>
           <button
             type="button"

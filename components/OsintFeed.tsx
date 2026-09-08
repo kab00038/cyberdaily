@@ -34,29 +34,44 @@ export default function OsintFeed() {
   const [selectedSub, setSelectedSub] = useState<string>("all");
 
   useEffect(() => {
+    // A fresh controller per fetch cycle so the cleanup abort never kills an
+    // in-flight request that a later interval tick started.
+    let controller: AbortController | null = null;
+
     async function fetchPosts() {
+      controller = new AbortController();
       try {
-        const res = await fetch("/api/osint");
+        const res = await fetch("/api/osint", { signal: controller.signal });
         const data = await res.json();
-        if (data && !Array.isArray(data)) {
+        if (controller.signal.aborted) return;
+        // `/api/osint` returns `{ items, generatedAt, sourceMeta }`; tolerate
+        // a bare array from older caches.
+        const items =
+          Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+        if (items.length === 0 && !Array.isArray(data) && !Array.isArray(data?.items)) {
+          // Malformed response: flag it but preserve previously loaded posts.
           setError(true);
-          setPosts([]);
         } else {
           setError(false);
-          setPosts(data);
+          setPosts(items);
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         console.error("Failed to fetch OSINT:", err);
+        if (controller.signal.aborted) return;
+        // Preserve previously loaded posts on a refresh failure.
         setError(true);
-        setPosts([]);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchPosts();
     const interval = setInterval(fetchPosts, 900000); // 15 min
-    return () => clearInterval(interval);
+    return () => {
+      controller?.abort();
+      clearInterval(interval);
+    };
   }, []);
 
   const subreddits = [
@@ -137,12 +152,17 @@ export default function OsintFeed() {
         for some posts.
       </p>
 
-      {error ? (
+      {error && filtered.length === 0 ? (
         <p className="p-4 text-sm text-gray-500">Unable to load community discussions</p>
       ) : filtered.length === 0 ? (
         <p className="p-4 text-sm text-gray-500">No recent discussions from monitored subreddits.</p>
       ) : (
         <>
+          {error && (
+            <p className="px-4 pt-1 text-xs text-amber-300/90">
+              Refresh failed. Showing last successful update.
+            </p>
+          )}
           <div className="px-4">
             {filtered.slice(0, 15).map((post, i) => (
               <article

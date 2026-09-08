@@ -76,7 +76,7 @@ export interface ThreatMapEntry {
   observedAt: string;
 }
 
-const BLOCKLIST_CATEGORIES = [
+export const BLOCKLIST_CATEGORIES = [
   { list: "ssh", label: "SSH Brute-Force" },
   { list: "mail", label: "Email Spam/Abuse" },
   { list: "apache", label: "Web Attack (DDoS/SQLi)" },

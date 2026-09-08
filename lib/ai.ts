@@ -15,6 +15,12 @@ export interface AISummary {
   urgency: "critical" | "high" | "medium" | "low";
 }
 
+/** Whether Groq enrichment is configured. Used by the sources health probe —
+ *  an unset key means AI summaries are unavailable, not "down". */
+export function isGroqConfigured(): boolean {
+  return GROQ_API_KEY !== "";
+}
+
 export type ThreatCategory =
   | "ransomware"
   | "phishing"

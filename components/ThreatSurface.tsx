@@ -33,21 +33,35 @@ export default function ThreatSurface() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // A fresh controller per fetch cycle so the cleanup abort never kills an
+    // in-flight request that a later interval tick started.
+    let controller: AbortController | null = null;
+
     async function fetchThreats() {
+      controller = new AbortController();
       try {
-        const res = await fetch("/api/threatmap");
+        const res = await fetch("/api/threatmap", {
+          signal: controller.signal,
+        });
         const data = await res.json();
-        setThreats(Array.isArray(data) ? data : []);
+        if (controller.signal.aborted) return;
+        // `/api/threatmap` returns `{ items, generatedAt, sourceMeta }`.
+        setThreats(Array.isArray(data) ? data : (data?.items ?? []));
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("Failed to fetch threat surface data:", error);
+        // Preserve previously loaded records on a refresh failure.
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     fetchThreats();
     const interval = setInterval(fetchThreats, 300000); // 5 min
-    return () => clearInterval(interval);
+    return () => {
+      controller?.abort();
+      clearInterval(interval);
+    };
   }, []);
 
   const { typeData, countryData, uniqueCountries, categoryCount } = useMemo(() => {

@@ -163,6 +163,33 @@ export default function CveTable({
         ? "listed"
         : "not-listed";
 
+  // A row is a "KEV-only" record when it is listed in the CISA KEV catalog but
+  // the loaded NVD record is an empty stub (no CVSS metrics and no real
+  // description) — the NVD side of the row is effectively unavailable, so we
+  // say so explicitly instead of leaving the row looking like a data bug.
+  const isKevOnlyStub = (cve: RiskScoredCVE): boolean =>
+    kevKnown &&
+    knownExploitedIds.has(cve.id) &&
+    cve.cvssScore === null &&
+    (cve.description === "" || cve.description === "No description");
+
+  const kevOnlyIndicator = (cve: RiskScoredCVE) => (
+    <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+      <span className="rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-amber-300">
+        KEV only — NVD record unavailable
+      </span>
+      <a
+        href={`https://nvd.nist.gov/vuln/detail/${cve.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-link"
+      >
+        Open NVD
+        <span className="sr-only"> (opens in a new tab)</span>
+      </a>
+    </p>
+  );
+
   return (
     <div className="vulnerability-browser">
       <div className="vulnerability-table-view">
@@ -316,6 +343,7 @@ export default function CveTable({
                       <p className="line-clamp-2 text-xs leading-relaxed text-gray-400">
                         {cve.description}
                       </p>
+                      {isKevOnlyStub(cve) && kevOnlyIndicator(cve)}
                     </td>
                     <td className="numeric">
                       <SeverityBadge
@@ -400,6 +428,8 @@ export default function CveTable({
               <p className="mt-2 text-xs leading-relaxed text-gray-400">
                 {cve.description}
               </p>
+
+              {isKevOnlyStub(cve) && kevOnlyIndicator(cve)}
 
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
                 <div>
