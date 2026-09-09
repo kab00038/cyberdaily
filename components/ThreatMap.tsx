@@ -178,24 +178,23 @@ export default function ThreatMap() {
     >
       <div className="panel-header flex items-center justify-between shrink-0 gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-white flex items-center gap-3 font-display">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+          <h2 className="section-title">
             Reported IP sample
           </h2>
-          <p className="text-xs text-gray-500 mt-1 font-mono">
+          <p className="text-xs text-ui-muted mt-1 font-mono">
             blocklist.de · sampled records with IP geolocation
           </p>
-          <p className="text-[10px] text-gray-600 mt-0.5 font-mono">
+          <p className="text-[11px] text-ui-muted mt-0.5 font-mono">
             This is a category-balanced sample, not a count of worldwide attacks.
           </p>
-          <p className="text-[10px] text-gray-600 mt-0.5 font-mono">
+          <p className="text-[11px] text-ui-muted mt-0.5 font-mono">
             {snapshotTime
               ? `Snapshot: ${formatPublishedAt(snapshotTime)} · Refreshed every 5 min`
               : "Refreshed every 5 min"}
           </p>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 font-mono shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="hidden sm:flex items-center gap-2 text-xs text-ui-muted font-mono shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-ui-muted" />
           {clusters.length} source regions
         </div>
       </div>
@@ -207,7 +206,7 @@ export default function ThreatMap() {
           tabIndex={-1}
           role="group"
           aria-label="Reported IP sample map"
-          className="relative map-frame min-w-0 bg-[#0B0F0E]/80 scanlines grid-overlay overflow-hidden focus:outline-none"
+          className="relative map-frame min-w-0 overflow-hidden"
         >
           <ComposableMap
             projection="geoMercator"
@@ -223,12 +222,12 @@ export default function ThreatMap() {
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
-                    fill="#1F2937"
-                    stroke="#374151"
+                    fill="var(--cd-raised)"
+                    stroke="var(--cd-border)"
                     strokeWidth={0.6}
                     style={{
                       default: { outline: "none" },
-                      hover: { outline: "none", fill: "#374151" },
+                      hover: { outline: "none", fill: "var(--cd-border)" },
                       pressed: { outline: "none" },
                     }}
                   />
@@ -265,13 +264,13 @@ export default function ThreatMap() {
                   <circle
                     r={radius}
                     fill="none"
-                    stroke="#64DFA6"
+                    stroke="var(--cd-accent)"
                     strokeWidth={1.5}
                     aria-hidden="true"
                   />
                   <circle
                     r={Math.max(2, radius * 0.55)}
-                    fill="#64DFA6"
+                    fill="var(--cd-accent)"
                     fillOpacity={0.85}
                     style={{ cursor: "pointer" }}
                     aria-hidden="true"
@@ -281,7 +280,7 @@ export default function ThreatMap() {
                       key={`pulse-${cluster.country}`}
                       r={radius}
                       fill="none"
-                      stroke="#64DFA6"
+                      stroke="var(--cd-accent)"
                       strokeWidth={2}
                       className="map-pulse"
                       aria-hidden="true"
@@ -295,13 +294,13 @@ export default function ThreatMap() {
           {/* Hover / selected info chip */}
           {activeCluster && (
             <div className="absolute top-4 right-4 panel px-4 py-3 text-xs pointer-events-none z-20">
-              <div className="text-emerald-400 font-semibold text-sm font-mono">
+              <div className="text-ui-accent font-semibold text-sm font-mono">
                 {countryName(activeCluster.country)}
               </div>
-              <div className="text-gray-300 mt-1 font-mono">
+              <div className="text-ui-secondary mt-1 font-mono">
                 {activeCluster.count} sampled record{activeCluster.count > 1 ? "s" : ""}
               </div>
-              <div className="text-gray-500 mt-1 max-w-[200px] truncate">
+              <div className="text-ui-muted mt-1 max-w-[200px] truncate">
                 {activeCluster.threats.join(", ")}
               </div>
             </div>
@@ -310,11 +309,11 @@ export default function ThreatMap() {
           {/* Legend */}
           <div className="absolute bottom-4 left-4 panel p-3 text-xs z-20">
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full border border-emerald-500 bg-emerald-500/30" />
-              <span className="text-gray-500 font-mono">Size = sampled records</span>
+              <span className="w-3 h-3 rounded-full border border-ui-control-border bg-ui-accent-soft" />
+              <span className="text-ui-muted font-mono">Size = sampled records</span>
             </div>
             {selectedCluster && (
-              <div className="mt-2 text-emerald-400 font-mono">
+              <div className="mt-2 text-ui-accent font-mono">
                 Selected: {countryName(selectedCluster.country)} ·{" "}
                 {selectedCluster.count} record{selectedCluster.count > 1 ? "s" : ""}
               </div>
@@ -323,7 +322,7 @@ export default function ThreatMap() {
         </div>
 
         {/* Country distribution list */}
-        <div className="min-w-0 border-t lg:border-t-0 lg:border-l border-ui-border bg-[#0B0F0E]/40">
+        <div className="min-w-0 border-t lg:border-t-0 lg:border-l border-ui-border bg-ui-canvas">
           <div className="panel-body">
             <h3 className="section-title">Country distribution</h3>
             <p className="metadata mt-0.5">
@@ -332,7 +331,7 @@ export default function ThreatMap() {
                 : "No records yet"}
             </p>
 
-            <div className="mt-3 divide-y divide-white/[0.06]">
+            <div className="mt-3 divide-y divide-ui-border">
               {rows.map((row) =>
                 row.country === OTHER ? (
                   <button

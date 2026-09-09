@@ -68,9 +68,9 @@ export default function CopyButton({
         type="button"
         onClick={handleCopy}
         aria-label={ariaLabel}
-        className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+        className={`inline-flex min-h-11 items-center rounded border px-3 py-2 text-xs font-medium transition-colors ${
           copied
-            ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+            ? "border-ui-accent bg-ui-accent-soft text-ui-accent"
             : "border-ui-control-border bg-ui-canvas text-ui-secondary hover:border-ui-muted hover:text-ui-text"
         } ${className}`}
       >

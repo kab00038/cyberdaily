@@ -60,8 +60,8 @@ function Metric({
 }) {
   return (
     <div>
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="mt-0.5 text-gray-200">{children}</dd>
+      <dt className="text-xs text-ui-muted">{label}</dt>
+      <dd className="mt-0.5 text-ui-secondary">{children}</dd>
     </div>
   );
 }
@@ -76,10 +76,10 @@ export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetails
     : null;
 
   return (
-    <div className="p-4 text-sm sm:p-5">
+    <div className="detail-readout p-4 text-sm sm:p-5">
       {showIdHeader && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
-          <h4 className="font-mono text-sm font-semibold text-gray-100">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-ui-border pb-3">
+          <h4 className="font-mono text-sm font-semibold text-ui-text">
             {cve.id}
           </h4>
           <CopyButton value={cve.id} ariaLabel="Copy CVE ID to clipboard" />
@@ -89,19 +89,19 @@ export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetails
       {incomplete && (
         <p
           role="status"
-          className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+          className="mb-4 rounded-md border border-ui-border bg-ui-raised px-3 py-2 text-xs text-ui-medium"
         >
-          <span className="font-semibold text-amber-100">Incomplete assessment</span>{" "}
+          <span className="font-semibold text-ui-medium">Incomplete assessment</span>{" "}
           — CVSS and EPSS data are missing for this entry, so it should not be
           treated as low priority.
         </p>
       )}
 
-      <p className="leading-relaxed text-gray-300">{cve.description}</p>
+      <p className="leading-relaxed text-ui-secondary">{cve.description}</p>
 
       <dl className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
         <Metric label="CVSS base score">
-          <span className="font-mono text-gray-200">
+          <span className="font-mono text-ui-secondary">
             {cve.cvssScore !== null ? cve.cvssScore.toFixed(1) : "Unavailable"}
           </span>
         </Metric>
@@ -109,12 +109,12 @@ export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetails
           <SeverityBadge severity={cve.severity} score={cve.cvssScore} />
         </Metric>
         <Metric label="EPSS probability">
-          <span className="font-mono text-gray-200">
+          <span className="font-mono text-ui-secondary">
             {epss ? formatProbability(epss.epss) : "Unavailable"}
           </span>
         </Metric>
         <Metric label="EPSS percentile">
-          <span className="font-mono text-gray-200">
+          <span className="font-mono text-ui-secondary">
             {epss ? formatPercentileValue(epss.percentile) : "Unavailable"}
           </span>
         </Metric>
@@ -123,7 +123,7 @@ export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetails
         </Metric>
         <Metric label="CWE IDs">
           {cve.cweIds.length > 0 ? (
-            <span className="font-mono text-gray-200">
+            <span className="font-mono text-ui-secondary">
               {cve.cweIds.join(", ")}
             </span>
           ) : (
@@ -133,8 +133,8 @@ export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetails
       </dl>
 
       {kev && (
-        <section className="mt-4 rounded-lg border border-red-500/30 bg-red-500/[0.06] p-3">
-          <h4 className="flex items-center gap-2 text-xs font-semibold text-red-300">
+        <section className="mt-4 border-l-2 border-ui-control-border bg-ui-raised p-4">
+          <h4 className="flex items-center gap-2 text-xs font-semibold text-ui-text">
             <svg
               className="h-3.5 w-3.5"
               fill="none"
@@ -177,7 +177,7 @@ export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetails
 
       {references.length > 0 && (
         <div className="mt-4">
-          <h4 className="mb-1 text-xs font-semibold text-gray-500">
+          <h4 className="mb-1 text-xs font-semibold text-ui-muted">
             References ({references.length})
           </h4>
           <ul className="space-y-1">

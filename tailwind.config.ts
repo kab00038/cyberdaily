@@ -23,6 +23,8 @@ const config: Config = {
           secondary: "var(--cd-secondary)",
           muted: "var(--cd-muted)",
           accent: "var(--cd-accent)",
+          "accent-soft": "var(--cd-accent-soft)",
+          "chart-track": "var(--cd-chart-track)",
           critical: "var(--cd-critical)",
           high: "var(--cd-high)",
           medium: "var(--cd-medium)",

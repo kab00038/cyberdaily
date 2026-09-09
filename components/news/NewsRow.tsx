@@ -14,7 +14,7 @@ export interface NewsRowProps {
 
 export default function NewsRow({ item, dateLabel }: NewsRowProps) {
   return (
-    <article className="interactive-row flex gap-5 border-b border-ui-border px-5 py-5 last:border-b-0">
+    <article className="news-row interactive-row flex gap-5 border-b border-ui-border last:border-b-0">
       {/* Left column: metadata, headline, description, AI summary caption */}
       <div className="flex-1 min-w-0">
         <div className="metadata mb-1.5 flex items-center gap-1.5">
@@ -30,12 +30,12 @@ export default function NewsRow({ item, dateLabel }: NewsRowProps) {
           </a>
         </h3>
 
-        <p className="mt-1.5 text-[15px] leading-relaxed text-ui-muted line-clamp-2">
+        <p className="mt-1 text-sm leading-relaxed text-ui-secondary line-clamp-2">
           {item.snippet}
         </p>
 
         {item.aiSummary != null && (
-          <p className="mt-2 text-xs text-ui-accent/70">AI summary · verify with source</p>
+          <p className="mt-2 text-xs text-ui-muted">AI summary · verify with source</p>
         )}
       </div>
 
@@ -51,7 +51,7 @@ export default function NewsRow({ item, dateLabel }: NewsRowProps) {
           unoptimized
           loading="lazy"
           decoding="async"
-          className="hidden sm:block w-24 h-24 object-cover rounded-lg flex-shrink-0 border border-ui-border"
+          className="hidden sm:block w-24 h-[72px] object-cover rounded flex-shrink-0"
           onError={(e) => {
             e.currentTarget.style.display = "none";
           }}

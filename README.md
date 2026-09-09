@@ -8,6 +8,14 @@ from — nothing is presented as larger or fresher than it is.
 The interface is a calm, dark, readable daily summary rather than an alarmist
 command center.
 
+The visual system follows an editorial briefing rhythm: Space Grotesk page
+headings, DM Sans reading text, and JetBrains Mono measurements and provenance.
+Emerald is reserved for navigation and chart marks; severity uses the shared
+semantic ramp. Summary metrics form a quiet ledger, feeds use compact reading
+rows, and named loading panels explain what is being fetched. All six pages
+share the semantic `ui-*` tokens, visible keyboard focus, reduced-motion rules,
+and mobile layouts; the vulnerability register switches from a table to cards.
+
 ## Pages
 
 | Path | Page | Contents |

@@ -9,8 +9,9 @@ import NewsSection from "@/components/sections/NewsSection";
 
 function LoadingFallback() {
   return (
-    <div className="panel rounded-lg p-4">
-      <p className="metadata">Loading…</p>
+    <div className="state-panel" role="status">
+      <strong>Loading the reading room</strong>
+      Preparing news and source filters.
     </div>
   );
 }

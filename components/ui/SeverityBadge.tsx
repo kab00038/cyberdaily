@@ -33,8 +33,8 @@ export default function SeverityBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-1 text-[13px] font-medium"
-      style={{ color: variable, borderColor: variable }}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded border-l-2 px-2 py-1 text-xs font-medium"
+      style={{ color: variable, borderColor: variable, background: "var(--cd-raised)" }}
     >
       {typeof score === "number" && score >= 0 && score <= 10 && (
         <span className="font-mono">{score.toFixed(1)}</span>

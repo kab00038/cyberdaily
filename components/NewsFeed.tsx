@@ -210,13 +210,13 @@ export default function NewsFeed() {
 
       <div aria-busy={loading || undefined}>
         {loading ? (
-          <SkeletonList />
+          <p className="state-panel" role="status"><strong>Loading the reading room</strong>Fetching the latest RSS snapshot. Stories will appear here.</p>
         ) : error && news.length === 0 ? (
-          <p className="px-1 py-6 text-sm text-ui-muted">
+          <p className="state-panel" role="status">
             Unable to load news. Try refreshing.
           </p>
         ) : visibleItems.length === 0 ? (
-          <div className="px-1 py-6 space-y-3">
+          <div className="state-panel space-y-3">
             <p className="text-sm text-ui-muted">No stories match these filters.</p>
             <button
               type="button"
@@ -228,7 +228,7 @@ export default function NewsFeed() {
           </div>
         ) : (
           <>
-            <div className="rounded-lg border border-ui-border overflow-hidden">
+            <div>
               {visibleItems.slice(0, visibleCount).map((item) => (
                 <NewsRow
                   key={item.link}
@@ -250,26 +250,6 @@ export default function NewsFeed() {
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-function SkeletonList() {
-  return (
-    <div className="space-y-3">
-      {[...Array(5)].map((_, i) => (
-        <div
-          key={i}
-          className="flex gap-5 px-5 py-5 border border-ui-border rounded-lg animate-pulse"
-        >
-          <div className="flex-1 space-y-2">
-            <div className="h-3 bg-white/[0.08] rounded w-1/3" />
-            <div className="h-4 bg-white/[0.08] rounded w-3/4" />
-            <div className="h-3 bg-white/[0.08] rounded w-1/2" />
-          </div>
-          <div className="hidden sm:block w-24 h-24 bg-white/[0.08] rounded-lg" />
-        </div>
-      ))}
     </div>
   );
 }

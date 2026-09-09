@@ -7,13 +7,14 @@ export default function NewsSection() {
   return (
     <>
       <header className="page-header">
+        <p className="eyebrow">The reading room / RSS feeds</p>
         <h1 className="page-title">News</h1>
         <p className="page-subtitle">
           Searchable cybersecurity news from RSS feeds
         </p>
       </header>
       <div className="page-body">
-        <div className="panel rounded-lg overflow-hidden">
+        <div className="panel flat-panel">
           <div className="panel-body">
             <NewsFeed />
           </div>

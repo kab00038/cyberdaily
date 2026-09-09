@@ -59,13 +59,13 @@ export default function StatsBar() {
       {statItems.map((item) => (
         <div key={item.label} className="panel p-5 group">
           <div className="min-w-0 flex-1">
-            <p className="metric-number text-white group-hover:scale-105 transition-transform duration-300 origin-left">
+            <p className="metric-number text-ui-text">
               {item.value.toLocaleString()}
             </p>
-            <p className="text-[11px] text-gray-500 font-medium mt-0.5">
+            <p className="text-[11px] text-ui-muted font-medium mt-0.5">
               {item.label}
             </p>
-            <p className="text-[10px] text-gray-600 font-mono mt-0.5">
+            <p className="text-[11px] text-ui-muted font-mono mt-0.5">
               {item.scope}
             </p>
           </div>

@@ -56,37 +56,33 @@ interface MetricCardProps {
 
 function MetricCard({ label, scope, href, value, status }: MetricCardProps) {
   return (
-    <Link href={href} className="panel interactive p-5 block group">
+    <Link href={href} className="metric-cell block">
       <div className="min-w-0">
         {status === "error" ? (
-          <p className="metric-number text-gray-500">
+          <p className="metric-number !text-lg">
             Unavailable
           </p>
         ) : status === "ready" && value !== null ? (
-          <p className="metric-number text-white">
+          <p className="metric-number text-ui-text">
             {value.toLocaleString()}
           </p>
         ) : (
-          <span
-            className="inline-block h-8 w-16 rounded bg-white/[0.08] animate-pulse"
-            aria-label="Loading"
-          />
+          <p className="metric-number !text-lg text-ui-muted">Pending</p>
         )}
-        <p className="text-[11px] text-gray-500 font-medium mt-1.5">
+        <p className="metric-label">
           {label}
         </p>
-        <p className="text-[10px] text-gray-600 font-mono mt-0.5">{scope}</p>
+        <p className="metric-scope">{scope}</p>
       </div>
     </Link>
   );
 }
 
 const TOOLTIP_STYLE = {
-  backgroundColor: "rgba(11, 15, 14, 0.95)",
-  border: "1px solid rgba(255, 255, 255, 0.08)",
+  backgroundColor: "var(--cd-canvas)",
+  border: "1px solid var(--cd-border)",
   borderRadius: "10px",
   fontSize: "12px",
-  backdropFilter: "blur(8px)",
 };
 
 export default function DashboardSection() {
@@ -96,6 +92,7 @@ export default function DashboardSection() {
   const [newsStatus, setNewsStatus] = useState<FetchStatus>("loading");
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [trendsStatus, setTrendsStatus] = useState<FetchStatus>("loading");
+  const [editionDate, setEditionDate] = useState("");
 
   // Stable reference clock for the "last 7 days" preview filter — captured on
   // mount (not Date.now() per render) so client/server output stays consistent.
@@ -103,6 +100,9 @@ export default function DashboardSection() {
 
   useEffect(() => {
     setNowMs(Date.now());
+    setEditionDate(new Intl.DateTimeFormat("en-GB", {
+      weekday: "long", day: "2-digit", month: "short", year: "numeric", timeZone: "UTC",
+    }).format(new Date()));
   }, []);
 
   useEffect(() => {
@@ -171,7 +171,8 @@ export default function DashboardSection() {
   return (
     <>
       {/* Page header */}
-      <header className="page-header">
+      <header className="page-header briefing-header">
+        <p className="eyebrow">Daily briefing{editionDate && ` / ${editionDate} · UTC`}</p>
         <h1 className="page-title">Today</h1>
         <p className="page-subtitle">
           Cybersecurity news and vulnerability intelligence
@@ -180,7 +181,7 @@ export default function DashboardSection() {
 
       <div className="page-body">
         {/* Summary metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="metric-ledger">
           <MetricCard
             label="Loaded CVEs"
             scope="NVD · last 14 days · partial"
@@ -210,9 +211,9 @@ export default function DashboardSection() {
             <div className="panel-header">
               <h2 className="section-title">Latest stories</h2>
             </div>
-            {newsStatus === "loading" && <p className="metadata p-4">Loading…</p>}
+            {newsStatus === "loading" && <p className="state-panel" role="status">Loading the latest RSS stories.</p>}
             {newsStatus === "error" && (
-              <p className="metadata p-4">News preview unavailable.</p>
+              <p className="state-panel" role="status">News preview unavailable.</p>
             )}
             {newsStatus === "ready" &&
               (latestStories.length === 0 ? (
@@ -220,27 +221,27 @@ export default function DashboardSection() {
                   No recent stories in the loaded feed.
                 </p>
               ) : (
-                <div className="divide-y divide-white/[0.06]">
+                <div className="divide-y divide-ui-border">
                   {latestStories.map((item, i) => (
                     <a
                       key={`${item.link}-${i}`}
                       href={item.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block p-4 hover:bg-[#0B0F0E]/40 transition-colors group"
+                      className="interactive-row block px-5 py-4 group"
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 font-medium">
+                        <span className="text-[11px] text-ui-secondary font-medium">
                           {item.source}
                         </span>
-                        <span className="text-[10px] text-gray-500 font-mono">
+                        <span className="text-[11px] text-ui-muted font-mono">
                           {formatPublishedAt(item.pubDate)}
                         </span>
                       </div>
-                      <h3 className="story-headline line-clamp-2 group-hover:text-emerald-400 transition-colors">
+                      <h3 className="story-headline line-clamp-2 group-hover:text-ui-accent transition-colors">
                         {item.title}
                       </h3>
-                      <p className="text-xs text-gray-400 line-clamp-2 mt-1 leading-relaxed">
+                      <p className="text-xs text-ui-secondary line-clamp-2 mt-1 leading-relaxed">
                         {item.aiSummary || item.snippet}
                       </p>
                     </a>
@@ -254,13 +255,13 @@ export default function DashboardSection() {
               <h2 className="section-title">Recent KEV entries</h2>
             </div>
             {threatsStatus === "loading" && (
-              <p className="metadata p-4">Loading…</p>
+              <p className="state-panel" role="status">Loading recent CISA KEV entries.</p>
             )}
             {threatsStatus === "error" && (
-              <p className="metadata p-4">KEV preview unavailable.</p>
+              <p className="state-panel" role="status">KEV preview unavailable.</p>
             )}
             {threatsStatus === "ready" && (
-              <div className="divide-y divide-white/[0.06]">
+              <div className="divide-y divide-ui-border">
                 {threats?.kev.slice(0, 5).map((item) => (
                   <Link
                     key={item.cveID}
@@ -271,21 +272,21 @@ export default function DashboardSection() {
                       <span className="text-link text-xs font-mono">
                         {item.cveID}
                       </span>
-                      <span className="flex items-center gap-1.5 text-[10px] text-gray-500 font-mono">
+                      <span className="flex items-center gap-1.5 text-[11px] text-ui-muted font-mono">
                         {item.dateAdded}
                         <span
-                          className="text-gray-600 transition-colors group-hover:text-emerald-400"
+                          className="text-ui-muted transition-colors group-hover:text-ui-accent"
                           aria-hidden="true"
                         >
                           →
                         </span>
                       </span>
                     </div>
-                    <p className="text-xs text-gray-300 mb-1">
+                    <p className="text-xs text-ui-secondary mb-1">
                       {item.vendorProject} — {item.product}
                     </p>
-                    <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">
-                      <span className="text-gray-400">Required: </span>
+                    <p className="text-[11px] text-ui-muted leading-relaxed line-clamp-2">
+                      <span className="text-ui-secondary">Required: </span>
                       {item.requiredAction}
                     </p>
                   </Link>
@@ -312,9 +313,10 @@ export default function DashboardSection() {
             </Link>
           </div>
           <div className="panel-body">
-            {trendsStatus === "loading" && <p className="metadata">Loading…</p>}
+            <p className="metadata mb-4">NVD · 14-day publication window · {trends?.dailyTrend ? `${trends.dailyTrend.reduce((total, day) => total + day.count, 0)} records in plotted bins` : "sample size unavailable"}</p>
+            {trendsStatus === "loading" && <p className="state-panel" role="status">Loading the NVD publication window.</p>}
             {trendsStatus === "error" && (
-              <p className="metadata">Chart unavailable.</p>
+              <p className="state-panel" role="status">Chart unavailable.</p>
             )}
             {trendsStatus === "ready" && trends?.dailyTrend && (
               <ResponsiveContainer width="100%" height={220}>
@@ -325,23 +327,24 @@ export default function DashboardSection() {
                   />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: "#6B7280", fontSize: 10 }}
+                    tick={{ fill: "var(--cd-muted)", fontSize: 10 }}
                     tickFormatter={(v) => v.slice(5)}
                   />
                   <YAxis
-                    tick={{ fill: "#6B7280", fontSize: 10 }}
+                    tick={{ fill: "var(--cd-muted)", fontSize: 10 }}
                     allowDecimals={false}
                   />
                   <Tooltip
                     contentStyle={TOOLTIP_STYLE}
-                    itemStyle={{ color: "#D1D5DB" }}
-                    labelStyle={{ color: "#6B7280" }}
+                    itemStyle={{ color: "var(--cd-secondary)" }}
+                    labelStyle={{ color: "var(--cd-muted)" }}
                   />
                   <Area
+                    isAnimationActive={false}
                     type="monotone"
                     dataKey="count"
-                    stroke="#10B981"
-                    fill="#10B981"
+                    stroke="var(--cd-accent)"
+                    fill="var(--cd-accent)"
                     fillOpacity={0.12}
                     strokeWidth={2}
                   />

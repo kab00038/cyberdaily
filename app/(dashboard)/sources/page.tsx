@@ -47,9 +47,9 @@ const SECTIONS: {
 ];
 
 const STATUS_STYLES: Record<SourceStatus["status"], string> = {
-  ok: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
-  partial: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-  error: "border-red-500/40 bg-red-500/10 text-red-400",
+  ok: "border-ui-control-border bg-ui-accent-soft text-ui-accent",
+  partial: "border-ui-border bg-ui-raised text-ui-medium",
+  error: "border-ui-border bg-ui-raised text-ui-critical",
 };
 
 const STATUS_LABELS: Record<SourceStatus["status"], string> = {
@@ -75,6 +75,7 @@ export default async function SourcesPage() {
   return (
     <>
       <header className="page-header">
+        <p className="eyebrow">Source directory / Provenance &amp; cadence</p>
         <h1 className="page-title">Sources</h1>
         <p className="page-subtitle">
           Every upstream feed CyberDaily consumes, with cadence, scope, and
@@ -84,7 +85,7 @@ export default async function SourcesPage() {
 
       <div className="page-body">
         {/* Provenance note */}
-        <div className="panel rounded-lg p-4 text-sm leading-relaxed text-gray-400">
+        <div className="state-note leading-relaxed">
           CyberDaily is a daily cybersecurity briefing. Sources are fetched at
           the cadences listed below. The current view may be using an older
           cached snapshot — see the timestamp on each source for when it was
@@ -107,13 +108,13 @@ export default async function SourcesPage() {
                 <p className="metadata mt-1">{section.blurb}</p>
               </div>
 
-              <div className="divide-y divide-white/[0.06]">
+              <div className="divide-y divide-ui-border">
                 {entries.map((entry) => {
                   const status = statusById.get(entry.id);
                   return (
                     <div
                       key={entry.id}
-                      className="panel-body flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+                      className="source-row panel-body flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
                     >
                       <div className="min-w-0">
                         <h3 className="story-headline">
@@ -127,7 +128,7 @@ export default async function SourcesPage() {
                           </a>
                         </h3>
                         <p className="metadata mt-1">{entry.description}</p>
-                        <p className="mt-1.5 text-xs font-mono text-gray-500">
+                        <p className="mt-1.5 text-xs font-mono text-ui-muted">
                           {entry.cadence}
                           {status?.count != null && (
                             <>
@@ -143,7 +144,7 @@ export default async function SourcesPage() {
 
                       <div className="shrink-0 sm:text-right">
                         <StatusBadge status={status?.status ?? "error"} />
-                        <p className="mt-1.5 text-[11px] text-gray-500">
+                        <p className="mt-1.5 text-[11px] text-ui-muted">
                           {status?.lastSuccessfulFetchAt
                             ? `Last fetch ${formatPublishedAt(
                                 status.lastSuccessfulFetchAt
@@ -151,12 +152,12 @@ export default async function SourcesPage() {
                             : "No successful fetch"}
                         </p>
                         {status?.upstreamUpdatedAt && (
-                          <p className="text-[11px] text-gray-600">
+                          <p className="text-[11px] text-ui-muted">
                             Upstream {formatPublishedAt(status.upstreamUpdatedAt)}
                           </p>
                         )}
                         {status?.message && (
-                          <p className="mt-1 max-w-[32ch] text-[11px] leading-relaxed text-red-400/90">
+                          <p className="mt-1 max-w-[32ch] text-[11px] leading-relaxed text-ui-critical">
                             {status.message}
                           </p>
                         )}

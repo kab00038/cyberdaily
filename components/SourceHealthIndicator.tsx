@@ -25,10 +25,10 @@ interface HealthInfo {
 }
 
 const DOT_CLASSES: Record<HealthState, string> = {
-  loading: "bg-gray-500",
-  ok: "bg-emerald-500",
-  partial: "bg-amber-500",
-  error: "bg-red-500",
+  loading: "bg-ui-muted",
+  ok: "bg-ui-accent",
+  partial: "bg-ui-medium",
+  error: "bg-ui-critical",
 };
 
 export default function SourceHealthIndicator({
@@ -92,7 +92,7 @@ export default function SourceHealthIndicator({
       <Link
         href="/sources"
         aria-label={`${health.label}${checkedLabel ? `, ${checkedLabel}` : ""}. Open sources page.`}
-        className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-gray-200"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded px-2 text-xs text-ui-muted transition-colors hover:bg-ui-raised hover:text-ui-text"
       >
         <span
           className={`h-2 w-2 shrink-0 rounded-full ${dotClass}`}
@@ -104,7 +104,7 @@ export default function SourceHealthIndicator({
   }
 
   return (
-    <div aria-live="polite" className="panel p-3">
+    <div aria-live="polite" className="border-t border-ui-border pt-4">
       <Link href="/sources" className="group flex items-center gap-3">
         <span className="relative flex h-2.5 w-2.5">
           <span
@@ -117,12 +117,12 @@ export default function SourceHealthIndicator({
           />
         </span>
         <div className="min-w-0">
-          <p className="text-[10px] text-gray-500">Source health</p>
-          <p className="truncate text-[10px] font-mono text-emerald-500 transition-colors group-hover:text-emerald-300">
+          <p className="text-[11px] text-ui-muted mb-1">Source health</p>
+          <p className="text-xs text-ui-secondary transition-colors group-hover:text-ui-accent">
             {health.label}
           </p>
           {checkedLabel && (
-            <p className="text-[9px] text-gray-600">{checkedLabel}</p>
+            <p className="text-[11px] text-ui-muted mt-1">{checkedLabel}</p>
           )}
         </div>
       </Link>

@@ -160,13 +160,7 @@ export default function ThreatForecast() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="panel rounded-lg p-4 animate-pulse">
-          <div className="h-4 bg-white/[0.08] rounded w-1/2 mb-3" />
-          <div className="h-3 bg-white/[0.08] rounded w-full mb-2" />
-          <div className="h-3 bg-white/[0.08] rounded w-3/4" />
-        </div>
-      </div>
+      <p className="state-panel" role="status"><strong>Loading the vulnerability register</strong>Retrieving the NVD snapshot, CISA KEV membership, and FIRST EPSS scores.</p>
     );
   }
 
@@ -177,7 +171,7 @@ export default function ThreatForecast() {
         nvdError !== null) && (
         <div
           role="status"
-          className="panel rounded-lg p-3 text-xs text-gray-400 border border-white/[0.06]"
+          className="state-note"
         >
           {completeness === "partial"
             ? "Showing a partial NVD result set — counts and CVEs are incomplete."
@@ -192,8 +186,8 @@ export default function ThreatForecast() {
 
       <div className="panel rounded-lg overflow-hidden">
         {/* Search / filter toolbar */}
-        <div className="border-b border-white/[0.06] p-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="border-b border-ui-border p-4">
+          <div className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="sm:col-span-2 lg:col-span-1">
               <label
                 htmlFor="cve-search"
@@ -224,8 +218,8 @@ export default function ThreatForecast() {
                   onClick={() => setHighCriticalOnly((current) => !current)}
                   className={`control !min-h-0 rounded-md px-2.5 py-1 text-xs transition-colors ${
                     highCriticalOnly
-                      ? "border-emerald-500 text-emerald-300"
-                      : "text-gray-300 hover:border-emerald-500/60"
+                      ? "border-ui-control-border text-ui-accent"
+                      : "text-ui-secondary hover:border-ui-control-border"
                   }`}
                 >
                   High &amp; Critical
@@ -272,15 +266,15 @@ export default function ThreatForecast() {
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Sort:</span>
+              <span className="text-xs text-ui-muted">Sort:</span>
               <button
                 type="button"
                 aria-pressed={isPrioritySort}
                 onClick={() => setSort(PRIORITY_SORT)}
                 className={`control !min-h-0 rounded-md px-3 py-1.5 text-xs transition-colors ${
                   isPrioritySort
-                    ? "border-emerald-500 text-emerald-300"
-                    : "text-gray-300 hover:border-emerald-500/60"
+                    ? "border-ui-control-border text-ui-accent"
+                    : "text-ui-secondary hover:border-ui-control-border"
                 }`}
               >
                 Priority
@@ -291,14 +285,14 @@ export default function ThreatForecast() {
                 onClick={() => setSort(NEWEST_SORT)}
                 className={`control !min-h-0 rounded-md px-3 py-1.5 text-xs transition-colors ${
                   isNewestSort
-                    ? "border-emerald-500 text-emerald-300"
-                    : "text-gray-300 hover:border-emerald-500/60"
+                    ? "border-ui-control-border text-ui-accent"
+                    : "text-ui-secondary hover:border-ui-control-border"
                 }`}
               >
                 Newest first
               </button>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-ui-muted">
               Showing {filtered.length} of {cves.length} CVEs
             </p>
           </div>

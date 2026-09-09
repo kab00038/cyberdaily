@@ -40,12 +40,12 @@ export default function AppHeader({
     : "";
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0B0F0E]/80 backdrop-blur-md border-b border-white/[0.06]">
-      <div className="px-4 sm:px-6 py-4 flex items-center justify-between relative z-10">
+    <header className="sticky top-0 z-40 bg-ui-canvas border-b border-ui-border">
+      <div className="px-4 sm:px-8 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleMobile}
-            className="md:hidden p-2 rounded-lg hover:bg-white/[0.06] text-gray-500 hover:text-gray-200 transition-colors"
+            className="lg:hidden icon-button"
             aria-label="Open navigation"
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav-drawer"
@@ -64,18 +64,18 @@ export default function AppHeader({
               />
             </svg>
           </button>
-          <h1 className="text-lg font-semibold text-white capitalize font-display">
-            {title}
-          </h1>
+          <p className="text-xs font-medium text-ui-muted">
+            <span className="hidden sm:inline">Briefing / </span>{title}
+          </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 sm:gap-3">
           <SourceHealthIndicator variant="compact" />
-          <span className="text-xs text-gray-500 font-mono">{timeLabel} UTC</span>
+          <span className="hidden sm:inline text-[11px] text-ui-muted font-mono" title="Page opened at">{timeLabel} UTC</span>
           <button
             type="button"
             onClick={() => window.location.reload()}
             aria-label="Refresh page"
-            className="p-2 rounded-lg hover:bg-white/[0.06] text-gray-500 hover:text-gray-200 transition-colors"
+            className="icon-button"
           >
             <svg
               className="w-4 h-4"

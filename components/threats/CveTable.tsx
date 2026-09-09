@@ -68,7 +68,7 @@ function SortGlyph({
     <span
       aria-hidden="true"
       className={`ml-1 inline-block text-[10px] leading-none ${
-        active ? "text-emerald-400" : "text-gray-600"
+        active ? "text-ui-accent" : "text-ui-muted"
       }`}
     >
       {active ? (direction === "asc" ? "▲" : "▼") : "↕"}
@@ -78,12 +78,12 @@ function SortGlyph({
 
 function ExploitedBadge({ state }: { state: ExploitState }) {
   const classes: Record<ExploitState, string> = {
-    listed: "bg-red-500/15 text-red-400 border-red-500/40",
-    "not-listed": "bg-white/[0.03] text-gray-500 border-white/[0.08]",
-    unknown: "bg-white/[0.03] text-gray-400 border-white/[0.08]",
+    listed: "bg-ui-raised text-ui-text border-ui-control-border font-semibold",
+    "not-listed": "bg-white/[0.03] text-ui-muted border-ui-border",
+    unknown: "bg-white/[0.03] text-ui-secondary border-ui-border",
   };
   const labels: Record<ExploitState, string> = {
-    listed: "Listed",
+    listed: "KEV listed",
     "not-listed": "Not listed",
     unknown: "Unknown",
   };
@@ -154,7 +154,7 @@ export default function CveTable({
   };
 
   const headerButtonClasses =
-    "flex items-center text-[11px] font-semibold text-gray-400 transition-colors hover:text-gray-200";
+    "flex items-center text-[11px] font-semibold text-ui-secondary transition-colors hover:text-ui-secondary";
 
   const exploitStateFor = (cve: RiskScoredCVE): ExploitState =>
     !kevKnown
@@ -175,7 +175,7 @@ export default function CveTable({
 
   const kevOnlyIndicator = (cve: RiskScoredCVE) => (
     <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
-      <span className="rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-amber-300">
+      <span className="rounded border border-ui-border bg-ui-raised px-1.5 py-0.5 text-ui-medium">
         KEV only — NVD record unavailable
       </span>
       <a
@@ -190,6 +190,15 @@ export default function CveTable({
     </p>
   );
 
+  if (sorted.length === 0) {
+    return (
+      <p className="state-panel" role="status">
+        <strong>No CVEs in this view</strong>
+        Adjust the filters, or check Sources for current dataset availability.
+      </p>
+    );
+  }
+
   return (
     <div className="vulnerability-browser">
       <div className="vulnerability-table-view">
@@ -200,19 +209,19 @@ export default function CveTable({
             its details.
           </caption>
           <colgroup>
-            <col style={{ width: "10.5rem" }} /> {/* CVE ID */}
-            <col />                                {/* Summary */}
-            <col style={{ width: "7.5rem" }} />   {/* CVSS */}
-            <col style={{ width: "5rem" }} />     {/* EPSS */}
-            <col style={{ width: "8rem" }} />     {/* KEV */}
-            <col style={{ width: "7rem" }} />     {/* Published */}
+            <col style={{ width: "11rem" }} />
+            <col />
+            <col style={{ width: "8.5rem" }} />
+            <col style={{ width: "5rem" }} />
+            <col style={{ width: "8rem" }} />
+            <col style={{ width: "7rem" }} />
           </colgroup>
           <thead>
-            <tr className="border-b border-white/[0.08]">
+            <tr className="border-b border-ui-border">
               <th
                 scope="col"
                 aria-sort={ariaSortFor("id")}
-                className="cve-id sticky left-0 z-10 border-r border-white/[0.06]"
+                className="cve-id sticky left-0 z-10 border-r border-ui-border"
                 style={{ background: "var(--cd-surface)" }}
               >
                 <button
@@ -228,7 +237,7 @@ export default function CveTable({
                 </button>
               </th>
               <th scope="col">
-                <span className="text-[11px] font-semibold text-gray-400">
+                <span className="text-[11px] font-semibold text-ui-secondary">
                   Summary
                 </span>
               </th>
@@ -301,7 +310,7 @@ export default function CveTable({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.06]">
+          <tbody className="divide-y divide-ui-border">
             {sorted.map((cve) => {
               const expanded = expandedId === cve.id;
               const exploitState = exploitStateFor(cve);
@@ -310,7 +319,7 @@ export default function CveTable({
                 <Fragment key={cve.id}>
                   <tr className="align-top">
                     <td
-                      className="cve-id sticky left-0 z-10 border-r border-white/[0.06]"
+                      className="cve-id sticky left-0 z-10 border-r border-ui-border"
                       style={{ background: "var(--cd-surface)" }}
                     >
                       <button
@@ -318,7 +327,7 @@ export default function CveTable({
                         onClick={() => onToggleExpand(cve.id)}
                         aria-expanded={expanded}
                         aria-controls={`cve-details-${cve.id}`}
-                        className="flex items-center gap-1.5 text-left font-mono text-xs text-emerald-400 transition-colors hover:text-emerald-300"
+                        className="flex items-center gap-1.5 text-left font-mono text-xs text-ui-accent transition-colors hover:text-ui-accent"
                       >
                         <svg
                           className={`h-3.5 w-3.5 shrink-0 transition-transform ${
@@ -340,7 +349,7 @@ export default function CveTable({
                       </button>
                     </td>
                     <td className="summary">
-                      <p className="line-clamp-2 text-xs leading-relaxed text-gray-400">
+                      <p className="line-clamp-2 text-xs leading-relaxed text-ui-secondary">
                         {cve.description}
                       </p>
                       {isKevOnlyStub(cve) && kevOnlyIndicator(cve)}
@@ -352,7 +361,7 @@ export default function CveTable({
                       />
                     </td>
                     <td className="numeric">
-                      <span className="font-mono text-xs text-gray-300">
+                      <span className="font-mono text-xs text-ui-secondary">
                         {cve.epssScore
                           ? formatProbability(cve.epssScore.epss)
                           : "Unavailable"}
@@ -362,13 +371,13 @@ export default function CveTable({
                       <ExploitedBadge state={exploitState} />
                     </td>
                     <td className="numeric">
-                      <span className="font-mono text-xs text-gray-400">
+                      <span className="font-mono text-xs text-ui-secondary">
                         {formatPublishedAt(cve.publishedAt)}
                       </span>
                     </td>
                   </tr>
                   {expanded && (
-                    <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+                    <tr className="border-b border-ui-border bg-white/[0.02]">
                       <td
                         id={`cve-details-${cve.id}`}
                         colSpan={COLUMN_COUNT}
@@ -402,7 +411,7 @@ export default function CveTable({
                   onClick={() => onToggleExpand(cve.id)}
                   aria-expanded={expanded}
                   aria-controls={`cve-details-card-${cve.id}`}
-                  className="flex items-center gap-1.5 text-left font-mono text-sm text-emerald-400 transition-colors hover:text-emerald-300"
+                  className="flex items-center gap-1.5 text-left font-mono text-sm text-ui-accent transition-colors hover:text-ui-accent"
                 >
                   <svg
                     className={`h-3.5 w-3.5 shrink-0 transition-transform ${
@@ -425,7 +434,7 @@ export default function CveTable({
                 <SeverityBadge severity={cve.severity} score={cve.cvssScore} />
               </div>
 
-              <p className="mt-2 text-xs leading-relaxed text-gray-400">
+              <p className="mt-2 text-xs leading-relaxed text-ui-secondary">
                 {cve.description}
               </p>
 
@@ -433,22 +442,22 @@ export default function CveTable({
 
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
                 <div>
-                  <dt className="text-gray-500">EPSS</dt>
-                  <dd className="font-mono text-gray-300">
+                  <dt className="text-ui-muted">EPSS</dt>
+                  <dd className="font-mono text-ui-secondary">
                     {cve.epssScore
                       ? formatProbability(cve.epssScore.epss)
                       : "Unavailable"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Exploitation</dt>
+                  <dt className="text-ui-muted">Exploitation</dt>
                   <dd>
                     <ExploitedBadge state={exploitState} />
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Published</dt>
-                  <dd className="font-mono text-gray-400">
+                  <dt className="text-ui-muted">Published</dt>
+                  <dd className="font-mono text-ui-secondary">
                     {formatPublishedAt(cve.publishedAt)}
                   </dd>
                 </div>
@@ -459,7 +468,7 @@ export default function CveTable({
                 onClick={() => onToggleExpand(cve.id)}
                 aria-expanded={expanded}
                 aria-controls={`cve-details-card-${cve.id}`}
-                className="mt-3 text-xs font-semibold text-emerald-400 transition-colors hover:text-emerald-300"
+                className="mt-3 text-xs font-semibold text-ui-accent transition-colors hover:text-ui-accent"
               >
                 {expanded ? "Hide details" : "Details"}
               </button>
@@ -467,7 +476,7 @@ export default function CveTable({
               {expanded && (
                 <div
                   id={`cve-details-card-${cve.id}`}
-                  className="mt-3 border-t border-white/[0.08] pt-3"
+                  className="mt-3 border-t border-ui-border pt-3"
                 >
                   <CveDetails cve={cve} kev={kevById?.get(cve.id)} />
                 </div>

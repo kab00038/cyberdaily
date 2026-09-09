@@ -64,10 +64,16 @@ export default function CveDetailClient({ id }: { id: string }) {
   }, [id]);
 
   return (
-    <div className="space-y-6">
+    <>
+      <header className="page-header">
+        <p className="eyebrow">Vulnerability register / Individual record</p>
+        <h1 className="page-title">{id}</h1>
+        <p className="page-subtitle">NVD assessment, CISA KEV membership, and FIRST EPSS probability</p>
+      </header>
+      <div className="page-body detail-readout">
       <Link
         href="/threats"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-ui-accent transition-colors hover:text-emerald-300"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-ui-accent transition-colors hover:text-ui-accent"
       >
         <svg
           className="h-4 w-4"
@@ -89,29 +95,20 @@ export default function CveDetailClient({ id }: { id: string }) {
       {status === "loading" && (
         <section className="panel rounded-lg overflow-hidden">
           <div className="panel-header flex flex-wrap items-center justify-between gap-3">
-            <h1 className="section-title font-mono text-sm">{id}</h1>
+            <h2 className="section-title">Record details</h2>
             <CopyButton value={id} ariaLabel="Copy CVE ID to clipboard" />
           </div>
-          <div className="p-4 sm:p-5 space-y-4" aria-label="Loading CVE details">
-            <div className="h-4 w-full rounded bg-white/[0.08] animate-pulse" />
-            <div className="h-4 w-3/4 rounded bg-white/[0.08] animate-pulse" />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-12 rounded bg-white/[0.08] animate-pulse" />
-              <div className="h-12 rounded bg-white/[0.08] animate-pulse" />
-              <div className="h-12 rounded bg-white/[0.08] animate-pulse" />
-              <div className="h-12 rounded bg-white/[0.08] animate-pulse" />
-            </div>
-          </div>
+          <p className="state-panel" role="status"><strong>Loading record details</strong>Retrieving available assessments and references for this CVE.</p>
         </section>
       )}
 
       {status === "error" && (
         <section className="panel rounded-lg overflow-hidden">
           <div className="panel-header flex flex-wrap items-center justify-between gap-3">
-            <h1 className="section-title font-mono text-sm">{id}</h1>
+            <h2 className="section-title">Record details</h2>
             <CopyButton value={id} ariaLabel="Copy CVE ID to clipboard" />
           </div>
-          <p role="status" className="p-4 text-sm text-gray-400">
+          <p role="status" className="p-4 text-sm text-ui-secondary">
             Failed to load details for this CVE. Please try again.
           </p>
         </section>
@@ -120,7 +117,7 @@ export default function CveDetailClient({ id }: { id: string }) {
       {status === "ready" && data && (
         <section className="panel rounded-lg overflow-hidden">
           <div className="panel-header flex flex-wrap items-center justify-between gap-3">
-            <h1 className="section-title font-mono text-sm">{id}</h1>
+            <h2 className="section-title">Record details</h2>
             <CopyButton
               value={data.cve?.id ?? data.kev?.cveID ?? id}
               ariaLabel="Copy CVE ID to clipboard"
@@ -141,9 +138,9 @@ export default function CveDetailClient({ id }: { id: string }) {
             <div className="p-4 text-sm sm:p-5">
               <p
                 role="status"
-                className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+                className="mb-4 rounded-md border border-ui-border bg-ui-raised px-3 py-2 text-xs text-ui-medium"
               >
-                <span className="font-semibold text-amber-100">
+                <span className="font-semibold text-ui-medium">
                   Limited information
                 </span>{" "}
                 — this CVE is in CISA&apos;s Known Exploited Vulnerabilities
@@ -153,42 +150,42 @@ export default function CveDetailClient({ id }: { id: string }) {
 
               <dl className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs text-gray-500">Vendor / project</dt>
-                  <dd className="mt-0.5 text-gray-200">
+                  <dt className="text-xs text-ui-muted">Vendor / project</dt>
+                  <dd className="mt-0.5 text-ui-secondary">
                     {data.kev.vendorProject}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-gray-500">Product</dt>
-                  <dd className="mt-0.5 text-gray-200">{data.kev.product}</dd>
+                  <dt className="text-xs text-ui-muted">Product</dt>
+                  <dd className="mt-0.5 text-ui-secondary">{data.kev.product}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-gray-500">Vulnerability</dt>
-                  <dd className="mt-0.5 text-gray-200">
+                  <dt className="text-xs text-ui-muted">Vulnerability</dt>
+                  <dd className="mt-0.5 text-ui-secondary">
                     {data.kev.vulnerabilityName}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-gray-500">Date added</dt>
-                  <dd className="mt-0.5 font-mono text-gray-200">
+                  <dt className="text-xs text-ui-muted">Date added</dt>
+                  <dd className="mt-0.5 font-mono text-ui-secondary">
                     {formatIsoDate(data.kev.dateAdded)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-gray-500">Required action</dt>
-                  <dd className="mt-0.5 text-gray-200">
+                  <dt className="text-xs text-ui-muted">Required action</dt>
+                  <dd className="mt-0.5 text-ui-secondary">
                     {data.kev.requiredAction}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-gray-500">Due date</dt>
-                  <dd className="mt-0.5 font-mono text-gray-200">
+                  <dt className="text-xs text-ui-muted">Due date</dt>
+                  <dd className="mt-0.5 font-mono text-ui-secondary">
                     {formatIsoDate(data.kev.dueDate)}
                   </dd>
                 </div>
               </dl>
 
-              <p className="mt-4 text-xs leading-relaxed text-gray-400">
+              <p className="mt-4 text-xs leading-relaxed text-ui-secondary">
                 {data.kev.shortDescription}
               </p>
 
@@ -197,34 +194,35 @@ export default function CveDetailClient({ id }: { id: string }) {
                   href={`https://nvd.nist.gov/vuln/detail/${id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20"
+                  className="inline-block rounded-md border border-ui-control-border bg-ui-accent-soft px-3 py-1.5 font-semibold text-ui-accent transition-colors hover:bg-ui-accent-soft"
                 >
                   Open NVD record
                   <span className="sr-only"> (opens in a new tab)</span>
                 </a>
               </p>
 
-              <p className="mt-3 text-[11px] text-gray-600 font-mono">
+              <p className="mt-3 text-[11px] text-ui-muted font-mono">
                 Lookup status: {data.cveLookupStatus}
               </p>
             </div>
           ) : (
             <div className="p-4 text-sm sm:p-5">
-              <p role="status" className="text-gray-400">
+              <p role="status" className="text-ui-secondary">
                 CVE not found in CISA KEV or NVD.
               </p>
-              <p className="mt-3 text-[11px] text-gray-600 font-mono">
+              <p className="mt-3 text-[11px] text-ui-muted font-mono">
                 Lookup status: {data.cveLookupStatus}
               </p>
             </div>
           )}
 
-          <p className="border-t border-white/[0.06] px-4 py-3 text-[11px] text-gray-500 sm:px-5">
+          <p className="border-t border-ui-border px-4 py-3 text-[11px] text-ui-muted sm:px-5">
             Fetched {formatPublishedAt(data.fetchedAt)} · Refresh page for new
             data.
           </p>
         </section>
       )}
-    </div>
+      </div>
+    </>
   );
 }

@@ -75,18 +75,19 @@ export default function MobileNavDrawer({
     <dialog
       id="mobile-nav-drawer"
       ref={dialogRef}
-      className="cd-mobile-nav m-0 h-full w-full max-w-xs bg-[#0A0E0C] text-white"
+      className="cd-mobile-nav m-0 h-full w-full max-w-xs bg-ui-sidebar text-ui-text"
       aria-label="Navigation"
     >
       <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
-          <span className="text-sm font-bold text-white font-display">
-            CyberDaily
+        <div className="flex items-center justify-between p-5 border-b border-ui-border">
+          <span className="flex items-center gap-3">
+            <span className="brand-mark" aria-hidden="true">cd</span>
+            <span className="brand-wordmark">CyberDaily</span>
           </span>
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/[0.06] text-gray-500 hover:text-gray-200 transition-colors"
+            className="icon-button"
             aria-label="Close navigation"
           >
             <svg
@@ -105,7 +106,7 @@ export default function MobileNavDrawer({
           </button>
         </div>
 
-        <nav className="p-4 space-y-1.5">
+        <nav className="p-4 space-y-1">
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -116,16 +117,10 @@ export default function MobileNavDrawer({
                 href={item.href}
                 onClick={onClose}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                  isActive
-                    ? "text-white bg-emerald-500/10 border border-white/[0.08]"
-                    : "text-gray-500 hover:text-gray-200 hover:bg-white/[0.06]"
-                }`}
+                className="nav-link"
               >
                 <span
-                  className={`flex-shrink-0 ${
-                    isActive ? "text-emerald-500" : ""
-                  }`}
+                  className="flex-shrink-0"
                   aria-hidden="true"
                 >
                   {item.icon}

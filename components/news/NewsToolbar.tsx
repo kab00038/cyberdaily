@@ -112,7 +112,7 @@ export default function NewsToolbar({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="news-toolbar space-y-3">
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex-1 min-w-[200px]">
           <label

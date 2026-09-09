@@ -8,6 +8,7 @@ export default function OsintSection() {
   return (
     <>
       <header className="page-header">
+        <p className="eyebrow">Community desk / Practitioner discussions</p>
         <h1 className="page-title">Community</h1>
         <p className="page-subtitle">
           Security discussions from Hacker News and cybersecurity subreddits
