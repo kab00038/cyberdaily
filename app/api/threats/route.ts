@@ -38,15 +38,15 @@ export async function GET() {
       })
       .sort((a, b) => b.riskScore - a.riskScore);
 
-    // Derive completeness from the NVDResult.
+    // Derive completeness from the NVDResult. An unreported total leaves
+    // coverage unknown; a stated total we did not fully load is partial.
     const nvdError = cveResult?.error ?? null;
     let completeness: "complete" | "partial" | "unknown" = "unknown";
     if (nvdError !== null) {
       completeness = "unknown";
-    } else if (
-      cveResult?.totalResults === null ||
-      cveList.length < (cveResult?.totalResults ?? 0)
-    ) {
+    } else if (cveResult?.totalResults === null) {
+      completeness = "unknown";
+    } else if (cveList.length < (cveResult?.totalResults ?? 0)) {
       completeness = "partial";
     } else {
       completeness = "complete";

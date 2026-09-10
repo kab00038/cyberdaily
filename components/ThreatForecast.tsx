@@ -173,9 +173,11 @@ export default function ThreatForecast() {
           role="status"
           className="state-note"
         >
-          {completeness === "partial"
-            ? "Showing a partial NVD result set — counts and CVEs are incomplete."
-            : "NVD data could not be loaded. Some information may be unavailable."}
+          {nvdError !== null
+            ? "NVD data could not be loaded. Some information may be unavailable."
+            : completeness === "partial"
+              ? "Showing a partial NVD result set — counts and CVEs are incomplete."
+              : "NVD did not report a total result count, so coverage of this window cannot be confirmed."}
         </div>
       )}
 

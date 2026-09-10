@@ -175,4 +175,63 @@ describe("fetchRSSFeedsWithStatus (mocked fetch)", () => {
     expect(atomItem?.link).toBe("https://example.com/article");
     expect(atomItem?.source).toBe("Dark Reading");
   });
+
+  it("decodes HTML entities in titles and snippets", async () => {
+    const entityXml = rssDoc(
+      rssItem(
+        "Broadcom&#038;Symantec close M&#038;A deal",
+        "https://example.com/entities",
+        "<description>Coverage of the M&#038;A review.</description>"
+      )
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
+        const body = String(input).includes("bleepingcomputer.com")
+          ? entityXml
+          : noDateXml;
+        return { ok: true, text: async () => body } as unknown as Response;
+      })
+    );
+
+    const { items } = await fetchRSSFeedsWithStatus();
+    const item = items.find((i) => i.link === "https://example.com/entities");
+
+    expect(item?.title).toBe("Broadcom&Symantec close M&A deal");
+    expect(item?.snippet).toBe("Coverage of the M&A review.");
+  });
+
+  it("records CVE identifiers the source stated explicitly", async () => {
+    const cveXml = rssDoc(
+      rssItem(
+        "Patch fixes CVE-2026-19490 in the wild",
+        "https://example.com/cve",
+        "<description>Also tracked as cve-2026-20001.</description>"
+      ) +
+        rssItem(
+          "Routine roundup",
+          "https://example.com/roundup",
+          "<description>No identifiers in this one.</description>"
+        )
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
+        const body = String(input).includes("bleepingcomputer.com")
+          ? cveXml
+          : noDateXml;
+        return { ok: true, text: async () => body } as unknown as Response;
+      })
+    );
+
+    const { items } = await fetchRSSFeedsWithStatus();
+    const withCve = items.find((i) => i.link === "https://example.com/cve");
+    const withoutCve = items.find(
+      (i) => i.link === "https://example.com/roundup"
+    );
+
+    // Title mention first, then the snippet mention, canonicalized.
+    expect(withCve?.cveIds).toEqual(["CVE-2026-19490", "CVE-2026-20001"]);
+    expect(withoutCve?.cveIds).toEqual([]);
+  });
 });

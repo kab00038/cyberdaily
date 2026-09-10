@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { NewsItem } from "@/lib/rss";
+import { canonicalCveId } from "@/lib/entities";
 import { formatPublishedAt, isPublishedWithin } from "@/lib/format";
 import NewsRow from "@/components/news/NewsRow";
 import NewsToolbar, {
@@ -106,7 +107,7 @@ export default function NewsFeed() {
     setPendingCount(0);
   };
 
-  // Filter state lives in the URL: q, source, period (hours), sort.
+  // Filter state lives in the URL: q, cve, source, period (hours), sort.
   const query = searchParams.get("q") ?? "";
   const source = searchParams.get("source") ?? "all";
   const periodParam = searchParams.get("period");
@@ -118,10 +119,17 @@ export default function NewsFeed() {
       : null;
   const sort = searchParams.get("sort") ?? "recent";
 
+  // A CVE filter is an exact identifier match. Anything that is not a CVE
+  // identifier is reported as invalid rather than silently returning an empty
+  // list — "no stories" must not stand in for "that is not a CVE ID".
+  const cveParam = (searchParams.get("cve") ?? "").trim();
+  const cveFilter = canonicalCveId(cveParam);
+  const cveFilterInvalid = cveParam !== "" && cveFilter === null;
+
   // Reset the pagination window whenever the active filters change.
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [query, source, periodParam, sort]);
+  }, [query, cveParam, source, periodParam, sort]);
 
   const sources = useMemo(
     () =>
@@ -133,6 +141,11 @@ export default function NewsFeed() {
     const q = query.trim().toLowerCase();
 
     const filtered = news.filter((item) => {
+      // An unparseable CVE filter matches nothing; the render path explains
+      // why rather than presenting this as an empty result set.
+      if (cveFilterInvalid) return false;
+      if (cveFilter !== null && !item.cveIds.includes(cveFilter)) return false;
+
       if (source !== "all" && item.source !== source) return false;
 
       // FIX-01: future-dated, invalid, or outside-window items are excluded.
@@ -160,14 +173,16 @@ export default function NewsFeed() {
       if (!aValid && !bValid) return 0;
       return (bTs as number) - (aTs as number);
     });
-  }, [news, source, hours, query, sort, nowMs]);
+  }, [news, source, hours, query, cveFilter, cveFilterInvalid, sort, nowMs]);
 
-  const hasActiveFilters = query !== "" || source !== "all" || hours !== null;
+  const hasActiveFilters =
+    query !== "" || source !== "all" || hours !== null || cveParam !== "";
 
   const clearFilters = () => {
     router.replace(
       buildFilteredUrl(pathname, searchParams, {
         q: null,
+        cve: null,
         source: null,
         period: null,
         sort: null,
@@ -215,9 +230,27 @@ export default function NewsFeed() {
           <p className="state-panel" role="status">
             Unable to load news. Try refreshing.
           </p>
+        ) : cveFilterInvalid ? (
+          <div className="state-panel space-y-3">
+            <p className="text-sm text-ui-muted">
+              “{cveParam}” is not a CVE identifier. Use the form CVE-YYYY-NNNN
+              — for example CVE-2026-12345.
+            </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-xs font-mono text-ui-accent border border-ui-accent/30 rounded px-3 py-2 hover:bg-ui-accent/10 transition-colors"
+            >
+              Clear filters
+            </button>
+          </div>
         ) : visibleItems.length === 0 ? (
           <div className="state-panel space-y-3">
-            <p className="text-sm text-ui-muted">No stories match these filters.</p>
+            <p className="text-sm text-ui-muted">
+              {cveFilter !== null
+                ? `No story in the loaded feed names ${cveFilter}. This reports coverage of the current snapshot, not whether the vulnerability exists.`
+                : "No stories match these filters."}
+            </p>
             <button
               type="button"
               onClick={clearFilters}

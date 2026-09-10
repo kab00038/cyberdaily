@@ -153,10 +153,15 @@ export async function fetchCVELatest(): Promise<NVDResult> {
     const startIndex =
       typeof record.startIndex === "number" ? record.startIndex : 0;
 
-    const completeness: "complete" | "partial" =
-      totalResults === null || items.length >= totalResults
-        ? "complete"
-        : "partial";
+    // Completeness is only "complete" when the provider stated a total and we
+    // loaded all of it. An unreported total cannot establish coverage, so it
+    // stays "unknown" — never inferred to be complete (or partial).
+    const completeness: "complete" | "partial" | "unknown" =
+      totalResults === null
+        ? "unknown"
+        : items.length >= totalResults
+          ? "complete"
+          : "partial";
 
     return {
       items,

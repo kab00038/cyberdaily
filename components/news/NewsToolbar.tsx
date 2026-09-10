@@ -1,9 +1,10 @@
 // components/news/NewsToolbar.tsx
 // Search + filter toolbar for the news feed. Filter state lives in the URL
-// (`q`, `source`, `period`, `sort`) so selections survive navigation and are
-// shareable. This component reads the current filter values from the search
-// params and writes changes back via `router.replace` (no history entries per
-// keystroke). The query text is debounced (~300 ms) before hitting the URL.
+// (`q`, `cve`, `source`, `period`, `sort`) so selections survive navigation
+// and are shareable. This component reads the current filter values from the
+// search params and writes changes back via `router.replace` (no history
+// entries per keystroke). Text fields are debounced (~300 ms) before hitting
+// the URL.
 //
 // All controls are native form elements with persistent, visible labels so
 // the toolbar is keyboard-navigable and screen-reader friendly.
@@ -54,6 +55,58 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
 
 const QUERY_DEBOUNCE_MS = 300;
 
+/**
+ * Text control bound to one URL search param. Typing stays local and the URL
+ * is updated once typing pauses; external URL changes (back/forward, a
+ * cleared filter) are adopted back into the input.
+ *
+ * `onCommit` receives only the new value — the key is bound by this call, so
+ * callers cannot mis-pair a value with the wrong param.
+ */
+function useDebouncedParam(key: string, onCommit: (value: string) => void) {
+  const searchParams = useSearchParams();
+  const fromUrl = searchParams.get(key) ?? "";
+  const [value, setValue] = useState(fromUrl);
+  const committedRef = useRef(fromUrl);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (fromUrl === committedRef.current) return;
+    setValue(fromUrl);
+    committedRef.current = fromUrl;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [fromUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const change = (next: string) => {
+    setValue(next);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      committedRef.current = next;
+      onCommit(next);
+    }, QUERY_DEBOUNCE_MS);
+  };
+
+  const reset = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    committedRef.current = "";
+    setValue("");
+  };
+
+  return { value, change, reset };
+}
+
 export default function NewsToolbar({
   sources,
   resultLabel,
@@ -63,52 +116,38 @@ export default function NewsToolbar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const q = searchParams.get("q") ?? "";
   const source = searchParams.get("source") ?? "all";
   const period = searchParams.get("period"); // hours as string, or null
   const sort = searchParams.get("sort") ?? "recent";
+  const cve = searchParams.get("cve") ?? "";
 
-  // Local copy of the query text so typing stays snappy while the URL update
-  // is debounced. Adopted back from the URL on external changes (back/forward).
-  const [inputValue, setInputValue] = useState(q);
-  const committedRef = useRef(q);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  // One pending-param snapshot shared by every control. Debounced fields
+  // commit independently, so writing to the live URL params (rather than a
+  // per-field copy) is what keeps a second commit from dropping the first.
+  const paramsRef = useRef<URLSearchParams>(
+    new URLSearchParams(searchParams.toString())
+  );
   useEffect(() => {
-    if (q !== committedRef.current) {
-      setInputValue(q);
-      committedRef.current = q;
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
+    paramsRef.current = new URLSearchParams(searchParams.toString());
+  }, [searchParams]);
+
+  const applyParams = (next: Record<string, string | null>) => {
+    const params = paramsRef.current;
+    for (const [key, value] of Object.entries(next)) {
+      if (value === null || value === "") params.delete(key);
+      else params.set(key, value);
     }
-  }, [q]);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  const updateUrl = (next: Record<string, string | null>) => {
-    router.replace(buildFilteredUrl(pathname, searchParams, next), {
-      scroll: false,
-    });
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
 
-  const handleQueryChange = (value: string) => {
-    setInputValue(value);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      committedRef.current = value;
-      updateUrl({ q: value });
-    }, QUERY_DEBOUNCE_MS);
-  };
+  const query = useDebouncedParam("q", (value) => applyParams({ q: value }));
+  const cveRef = useDebouncedParam("cve", (value) => applyParams({ cve: value }));
 
   const clearFilters = () => {
-    setInputValue("");
-    updateUrl({ q: null, source: null, period: null, sort: null });
+    query.reset();
+    cveRef.reset();
+    applyParams({ q: null, cve: null, source: null, period: null, sort: null });
   };
 
   return (
@@ -127,9 +166,31 @@ export default function NewsToolbar({
             className="control w-full"
             placeholder="Search news"
             aria-label="Search news"
-            value={inputValue}
-            onChange={(e) => handleQueryChange(e.target.value)}
+            value={query.value}
+            onChange={(e) => query.change(e.target.value)}
           />
+        </div>
+
+        <div>
+          <label
+            htmlFor="news-cve"
+            className="control-label"
+          >
+            CVE reference
+          </label>
+          <input
+            id="news-cve"
+            type="search"
+            className="control min-w-[180px] font-mono"
+            placeholder="CVE-2026-0000"
+            aria-label="Filter by CVE identifier"
+            aria-describedby="news-cve-hint"
+            value={cveRef.value}
+            onChange={(e) => cveRef.change(e.target.value)}
+          />
+          <span id="news-cve-hint" className="sr-only">
+            Exact CVE identifier, for example CVE-2026-12345.
+          </span>
         </div>
 
         <div>
@@ -144,7 +205,7 @@ export default function NewsToolbar({
             className="control min-w-[180px]"
             aria-label="Filter by source"
             value={source}
-            onChange={(e) => updateUrl({ source: e.target.value })}
+            onChange={(e) => applyParams({ source: e.target.value })}
           >
             <option value="all">All sources</option>
             {sources.map((s) => (
@@ -168,7 +229,7 @@ export default function NewsToolbar({
             aria-label="Filter by date range"
             value={period ?? "all"}
             onChange={(e) =>
-              updateUrl({ period: e.target.value === "all" ? null : e.target.value })
+              applyParams({ period: e.target.value === "all" ? null : e.target.value })
             }
           >
             {PERIOD_OPTIONS.map((opt) => (
@@ -191,7 +252,7 @@ export default function NewsToolbar({
             className="control min-w-[140px]"
             aria-label="Sort stories"
             value={sort}
-            onChange={(e) => updateUrl({ sort: e.target.value })}
+            onChange={(e) => applyParams({ sort: e.target.value })}
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -214,7 +275,10 @@ export default function NewsToolbar({
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-ui-muted">
         <span className="numeric">{resultLabel}</span>
-        {q !== "" && <FilterChip label={`“${q}”`} />}
+        {query.value !== "" && <FilterChip label={`“${query.value}”`} />}
+        {cve !== "" && (
+          <FilterChip label={`References ${cve.trim().toUpperCase()}`} />
+        )}
         {source !== "all" && <FilterChip label={source} />}
         {period !== null && (
           <FilterChip

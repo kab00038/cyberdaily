@@ -1,6 +1,13 @@
 // lib/rss.ts — edge-compatible (fetch + fast-xml-parser, no Node http modules)
 import { XMLParser } from "fast-xml-parser";
 import { asArray, asRecord, asString, asText } from "./parse";
+import {
+  collapseWhitespace,
+  decodeHtmlEntities,
+  extractCveIds,
+  normalizeDisplayText,
+  stripFeedBoilerplate,
+} from "./entities";
 
 export interface NewsItem {
   title: string;
@@ -13,6 +20,12 @@ export interface NewsItem {
    */
   pubDate: string | null;
   thumbnail?: string;
+  /**
+   * CVE identifiers the source wrote explicitly in its title or snippet, in
+   * first-seen order. A reference only: it states that the source named the
+   * identifier, not that anything is exploited or that the reader is affected.
+   */
+  cveIds: string[];
   /**
    * AI-enriched fields merged onto each item by the `/api/news` route.
    * Optional because the raw feed parser does not populate them.
@@ -39,27 +52,32 @@ const RSS_FEEDS = [
 function extractSnippet(content: unknown, maxLength: number = 200): string {
   const raw = asText(content);
   if (!raw) return "";
-  const textOnly = raw.replace(/<[^>]*>/g, "");
-  return textOnly.length > maxLength
-    ? textOnly.substring(0, maxLength) + "..."
-    : textOnly;
+  // Strip markup, decode entities, remove syndication furniture, then clamp.
+  // Boilerplate is removed before clamping so furniture cannot consume the
+  // reader's first 200 characters.
+  const text = stripFeedBoilerplate(
+    collapseWhitespace(decodeHtmlEntities(raw.replace(/<[^>]*>/g, "")))
+  );
+  return text.length > maxLength
+    ? text.substring(0, maxLength) + "..."
+    : text;
 }
 
 function extractLink(item: Record<string, unknown>): string {
   const link = item.link;
-  if (typeof link === "string") return link;
+  if (typeof link === "string") return decodeHtmlEntities(link);
   if (Array.isArray(link)) {
     // Atom: <link href=... rel=alternate/> (rel may be absent for the primary link)
     for (const l of link) {
       const rec = asRecord(l);
       const href = asString(rec?.["@_href"]);
       if (href && (rec?.["@_rel"] === undefined || rec?.["@_rel"] === "alternate")) {
-        return href;
+        return decodeHtmlEntities(href);
       }
     }
     return "#";
   }
-  return asString(asRecord(link)?.["@_href"], "#");
+  return decodeHtmlEntities(asString(asRecord(link)?.["@_href"], "#"));
 }
 
 function extractThumbnail(item: Record<string, unknown>): string | undefined {
@@ -104,15 +122,18 @@ async function fetchSingleFeedResult(feed: {
         break;
       }
     }
+    const title = normalizeDisplayText(asText(item.title)) || "Untitled";
+    const snippet = extractSnippet(
+      item.description ?? item.summary ?? item["content:encoded"] ?? item.content
+    );
     return {
-      title: asText(item.title) || "Untitled",
+      title,
       link: extractLink(item),
-      snippet: extractSnippet(
-        item.description ?? item.summary ?? item["content:encoded"] ?? item.content
-      ),
+      snippet,
       source: feed.name,
       pubDate,
       thumbnail: extractThumbnail(item),
+      cveIds: extractCveIds(title, snippet),
     };
   });
   return { items: parsed, fetchedAt: new Date().toISOString() };

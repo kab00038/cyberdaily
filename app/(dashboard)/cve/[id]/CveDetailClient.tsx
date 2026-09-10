@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import CveDetails from "@/components/threats/CveDetails";
 import CopyButton from "@/components/ui/CopyButton";
+import ReaderReviewPanel from "@/components/cve/ReaderReviewPanel";
 import { calculateRiskScore } from "@/lib/risk-scoring";
 import { formatPublishedAt } from "@/lib/format";
 import type { CVEItem } from "@/lib/nvd";
@@ -221,6 +222,15 @@ export default function CveDetailClient({ id }: { id: string }) {
             data.
           </p>
         </section>
+      )}
+
+      {status === "ready" && data && (data.cve !== null || data.kev !== null) && (
+        <ReaderReviewPanel
+          cveId={data.cve?.id ?? data.kev?.cveID ?? id}
+          // The record revision a decision is recorded against: NVD's own
+          // modification time, or the KEV catalog date for KEV-only records.
+          revisionId={data.cve?.lastModified ?? data.kev?.dateAdded ?? null}
+        />
       )}
       </div>
     </>

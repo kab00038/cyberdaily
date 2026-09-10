@@ -21,9 +21,9 @@ and mobile layouts; the vulnerability register switches from a table to cards.
 | Path | Page | Contents |
 | --- | --- | --- |
 | `/` | Today | Page header, three summary metric cards (CVEs, KEV, news), a 2:1 Latest stories / Recent KEV preview grid, a reported-IP sample map, and a 14-day CVE trend chart. The stories preview uses the same recency normalization as the News page so future-dated items cannot lead. |
-| `/news` | News | Searchable feed with URL-backed filters (`q`, `source`, `period`, `sort`) that survive reload, back, and share. A "New stories available" banner refreshes in place without jarring reordering; failed refreshes keep the prior content with a stale timestamp. |
+| `/news` | News | Searchable feed with URL-backed filters (`q`, `cve`, `source`, `period`, `sort`) that survive reload, back, and share. Stories that name a CVE explicitly carry a reference link to that record. A "New stories available" banner refreshes in place without jarring reordering; failed refreshes keep the prior content with a stale timestamp. |
 | `/threats` | Vulnerabilities | Sortable semantic table (card view on small screens), severity and exploitation filters, and expandable rows opening a full CveDetails read-out (CVSS, EPSS, attack vector, CWE, KEV, references). |
-| `/cve/[id]` | CVE detail | Exact per-CVE lookup with a direct NVD fallback for CVEs outside the loaded snapshot, a copy-to-clipboard CVE ID, an explicit KEV-only fallback state, and a "last fetched" timestamp. |
+| `/cve/[id]` | CVE detail | Exact per-CVE lookup with a direct NVD fallback for CVEs outside the loaded snapshot, a copy-to-clipboard CVE ID, an explicit KEV-only fallback state, a "last fetched" timestamp, and a browser-local review panel (save, review status, private note, export/import/reset). |
 | `/community` | Community | Hacker News and Reddit security discussions in one section, with uniform rows, per-row "Read article" / "View discussion" links, and "View more discussions" footers. |
 | `/analytics` | Analytics | Completeness-aware trends: severity, attack vector, and EPSS distributions, vendor mentions, and CWE breakdowns (custom DistributionList bars). |
 | `/sources` | Sources | Data provenance, cadence, scope, and live health status for every upstream source. |
@@ -101,6 +101,43 @@ applied in four passes:
    Vulnerabilities table rows.
 4. **Pass 4 — documentation.** This README refresh.
 
+## Feature milestone: connected evidence and local review
+
+The first feature milestone connects the News and Vulnerabilities views and
+gives the reader somewhere to record a decision. It deliberately takes the
+cheap, defensible half of that work and defers story grouping.
+
+- **Text normalization** (`lib/entities.ts`). Feeds emit escaped entities
+  (`M&#038;A`) and syndication furniture ("The post … appeared first on …").
+  Titles and snippets are decoded and de-boilerplated before display, so
+  matching never runs against markup. Unrecognized entities are kept verbatim
+  rather than dropped.
+- **Explicit CVE references.** A story that names a CVE in its title or
+  snippet gets a `cveIds` list and a reference link to `/cve/[id]`. This is a
+  *reference*, not an assessment: it records that the source wrote the
+  identifier. It implies no severity, no exploitation, and nothing about
+  whether the reader is affected.
+- **Exact-match CVE filter.** The News page accepts a `cve` URL param. A value
+  that is not a CVE identifier is reported as invalid instead of rendering an
+  empty list, so "no stories" can never stand in for "that is not a CVE ID".
+  An empty result states that no story in the *loaded snapshot* names the
+  identifier, and says so explicitly.
+- **Browser-local review state** (`lib/reader-state.ts`). Save, review status
+  (Needs review / Investigating / Addressed / Not relevant), and a private
+  note, stored in this browser only, with export, import, and reset. A
+  decision is stamped with the record revision it was made against; when the
+  record is later revised, the earlier decision is shown as outdated rather
+  than silently inherited. "Addressed" records the reader's own decision — it
+  is not a CyberDaily verification that remediation happened.
+- **Coverage honesty.** NVD completeness no longer treats an unreported total
+  result count as `complete`. An unestablished total stays `unknown` and is
+  surfaced as such on the Vulnerabilities page and in `/api/threats`.
+
+Deferred on purpose: conservative story grouping and evidence lineage
+(needs a labeled evaluation set), the followable product/topic catalog, and
+revision history with change events. Those are designed to compose on top of
+the entity and normalization primitives added here.
+
 ## Architecture
 
 - Next.js 15.5 App Router with route groups; all dynamic routes export
@@ -118,6 +155,7 @@ applied in four passes:
 | Command | Purpose |
 | --- | --- |
 | `npm ci` | Install dependencies from the lockfile |
+| `npm test` | Run the Vitest suite |
 | `npm run lint` | Run ESLint |
 | `npx tsc --noEmit` | Type-check the project |
 | `npm run build` | Next.js production build |
@@ -139,3 +177,15 @@ the news endpoint serves RSS content immediately and enrichment is skipped.
   the browser.
 - Community engagement counts are extracted from RSS content and may be
   unavailable for some posts.
+- CVE references are extracted only when a source writes the identifier in its
+  title or snippet. A story that discusses a vulnerability without naming it
+  carries no reference, and the absence of a reference is not evidence of
+  anything about that story.
+- The CVE filter matches within the loaded snapshot only. The 14-day NVD
+  window is a sampling limit, so an empty result means "not in the loaded
+  feed", never "not affected".
+- Review state (saves, statuses, notes) lives in one browser's local storage.
+  Clearing site data removes it, it does not follow the reader across devices,
+  and export is the only way to keep a copy.
+- There is no revision history yet. A decision records the revision it was
+  made against and can be shown as outdated, but no change timeline exists.
