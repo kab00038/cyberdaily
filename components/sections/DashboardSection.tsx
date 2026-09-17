@@ -16,7 +16,13 @@ import {
   YAxis,
 } from "recharts";
 import ThreatMap from "@/components/ThreatMap";
-import { formatPublishedAt, isPublishedWithin } from "@/lib/format";
+import {
+  formatKevPrimaryLine,
+  formatKevVendorProduct,
+  formatPublishedAt,
+  isPublishedWithin,
+  plural,
+} from "@/lib/format";
 
 interface NewsPreviewItem {
   title: string;
@@ -31,8 +37,9 @@ interface KEVPreviewItem {
   cveID: string;
   vendorProject: string;
   product: string;
+  vulnerabilityName: string;
+  shortDescription: string;
   dateAdded: string;
-  requiredAction: string;
 }
 
 interface ThreatsData {
@@ -262,35 +269,59 @@ export default function DashboardSection() {
             )}
             {threatsStatus === "ready" && (
               <div className="divide-y divide-ui-border">
-                {threats?.kev.slice(0, 5).map((item) => (
-                  <Link
-                    key={item.cveID}
-                    href={`/cve/${item.cveID}`}
-                    className="interactive-row block p-4 transition-colors group"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-link text-xs font-mono">
-                        {item.cveID}
-                      </span>
-                      <span className="flex items-center gap-1.5 text-[11px] text-ui-muted font-mono">
-                        {item.dateAdded}
-                        <span
-                          className="text-ui-muted transition-colors group-hover:text-ui-accent"
-                          aria-hidden="true"
-                        >
-                          →
+                {threats?.kev.slice(0, 5).map((item) => {
+                  const primaryLine = formatKevPrimaryLine(
+                    item.vulnerabilityName,
+                    item.vendorProject,
+                    item.product
+                  );
+                  const vendorProduct = formatKevVendorProduct(
+                    item.vendorProject,
+                    item.product
+                  );
+                  // Skip the secondary metadata line when the primary line
+                  // already IS the vendor/product fallback (empty
+                  // vulnerabilityName) — otherwise it would just repeat.
+                  const showVendorProduct =
+                    vendorProduct !== "" && vendorProduct !== primaryLine;
+                  const dek = item.shortDescription.trim();
+
+                  return (
+                    <Link
+                      key={item.cveID}
+                      href={`/cve/${item.cveID}`}
+                      className="interactive-row block p-4 transition-colors group"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-link text-xs font-mono">
+                          {item.cveID}
                         </span>
-                      </span>
-                    </div>
-                    <p className="text-xs text-ui-secondary mb-1">
-                      {item.vendorProject} — {item.product}
-                    </p>
-                    <p className="text-[11px] text-ui-muted leading-relaxed line-clamp-2">
-                      <span className="text-ui-secondary">Required: </span>
-                      {item.requiredAction}
-                    </p>
-                  </Link>
-                ))}
+                        <span className="flex items-center gap-1.5 text-[11px] text-ui-muted font-mono">
+                          {item.dateAdded}
+                          <span
+                            className="text-ui-muted transition-colors group-hover:text-ui-accent"
+                            aria-hidden="true"
+                          >
+                            →
+                          </span>
+                        </span>
+                      </div>
+                      <p className="story-headline line-clamp-2 group-hover:text-ui-accent transition-colors">
+                        {primaryLine}
+                      </p>
+                      {showVendorProduct && (
+                        <p className="text-xs text-ui-secondary mt-1">
+                          {vendorProduct}
+                        </p>
+                      )}
+                      {dek !== "" && (
+                        <p className="text-[11px] text-ui-muted leading-relaxed line-clamp-2 mt-1">
+                          {dek}
+                        </p>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -313,7 +344,7 @@ export default function DashboardSection() {
             </Link>
           </div>
           <div className="panel-body">
-            <p className="metadata mb-4">NVD · 14-day publication window · {trends?.dailyTrend ? `${trends.dailyTrend.reduce((total, day) => total + day.count, 0)} records in plotted bins` : "sample size unavailable"}</p>
+            <p className="metadata mb-4">NVD · 14-day publication window · {trends?.dailyTrend ? `${plural(trends.dailyTrend.reduce((total, day) => total + day.count, 0), "record")} in plotted bins` : "sample size unavailable"}</p>
             {trendsStatus === "loading" && <p className="state-panel" role="status">Loading the NVD publication window.</p>}
             {trendsStatus === "error" && (
               <p className="state-panel" role="status">Chart unavailable.</p>

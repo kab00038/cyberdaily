@@ -2,6 +2,8 @@
 // desktop sidebar and the mobile drawer so the two stay in sync.
 import type { ReactNode } from "react";
 
+export { isNavItemActive } from "@/lib/nav-active";
+
 export interface NavItem {
   href: string;
   label: string;

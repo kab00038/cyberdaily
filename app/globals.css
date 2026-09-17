@@ -250,6 +250,41 @@ html { scroll-padding-top: 5rem; }
 .control::placeholder { color: var(--cd-muted); opacity: 1; }
 .control:disabled { cursor: not-allowed; opacity: 0.65; }
 
+/* Compact inline toggle chip — shares .control's border, radius, background
+   and text colour, but sized for a dense toolbar row instead of the 44px
+   touch target (F3). Mobile raises it back to 44px below, since the 28px
+   height is only safe once pointers are the primary input. */
+.control-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--cd-control-border);
+  border-radius: var(--cd-radius);
+  background: var(--cd-canvas);
+  color: var(--cd-secondary);
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  transition: background-color 180ms ease-out, border-color 180ms ease-out,
+    color 180ms ease-out, box-shadow 180ms ease-out;
+}
+.control-chip:hover { border-color: var(--cd-control-border); color: var(--cd-text); }
+.control-chip:disabled { cursor: not-allowed; opacity: 0.65; }
+
+/* Active/pressed state (F4) — driven off aria-pressed so the visual state
+   can never drift from the control's real state. Mirrors the accent-soft +
+   accent-border treatment .nav-link[aria-current="page"] already uses. The
+   inset ring is a non-colour cue (a heavier border, like .nav-link's
+   border-left) so the active chip stays distinguishable under grayscale,
+   not just by colour (WCAG 1.4.1). */
+.control-chip[aria-pressed="true"] {
+  background: var(--cd-accent-soft);
+  border-color: var(--cd-accent);
+  box-shadow: inset 0 0 0 1px var(--cd-accent);
+  color: var(--cd-text);
+}
+
 /* Text link — underline on hover, not always */
 .text-link {
   color: var(--cd-accent);
@@ -583,4 +618,7 @@ main {
   .panel-header { flex-wrap: wrap; }
   .community-row-actions .text-link { min-height: 44px; }
   .distribution-row { gap: 8px; }
+  /* Restore the 44px touch target for the compact chip once pointers are
+     no longer the primary input (F3 accessibility constraint). */
+  .control-chip { min-height: 44px; padding: 10px 12px; }
 }

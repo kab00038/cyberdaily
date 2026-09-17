@@ -8,7 +8,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navItems } from "@/components/navigation";
+import { isNavItemActive, navItems } from "@/components/navigation";
 
 export default function MobileNavDrawer({
   open,
@@ -108,9 +108,7 @@ export default function MobileNavDrawer({
 
         <nav className="p-4 space-y-1">
           {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/" && pathname.startsWith(item.href + "/"));
+            const isActive = isNavItemActive(pathname, item);
             return (
               <Link
                 key={item.href}

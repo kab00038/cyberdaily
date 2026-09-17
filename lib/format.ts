@@ -132,3 +132,60 @@ export function formatChartDate(value: string | null | undefined): string {
   if (!Number.isFinite(ts)) return value;
   return new Date(ts).toISOString().slice(0, 10);
 }
+
+/**
+ * Build the "Vendor — Product" metadata line for a CISA KEV entry.
+ *
+ * Either side may be an empty string (lib/abuse-ch.ts coerces missing
+ * upstream fields to ""), so this omits whichever side is blank rather
+ * than rendering a bare "—" separator. Returns "" if both are blank.
+ */
+export function formatKevVendorProduct(
+  vendorProject: string,
+  product: string
+): string {
+  const vendor = vendorProject.trim();
+  const prod = product.trim();
+  if (vendor && prod) return `${vendor} — ${prod}`;
+  return vendor || prod || "";
+}
+
+/**
+ * Pick the headline for a KEV preview row.
+ *
+ * `vulnerabilityName` is the unique, informative field and is always
+ * preferred. When it is an empty string (possible per lib/abuse-ch.ts's
+ * asString() coercion), this falls back to "Vendor — Product", and only
+ * as a last resort to a generic placeholder. It never falls back to
+ * `requiredAction`, which is boilerplate shared across nearly every KEV
+ * entry and belongs on the CVE detail page, not a list preview.
+ */
+export function formatKevPrimaryLine(
+  vulnerabilityName: string,
+  vendorProject: string,
+  product: string
+): string {
+  const name = vulnerabilityName.trim();
+  if (name) return name;
+  const vendorProduct = formatKevVendorProduct(vendorProject, product);
+  return vendorProduct || "Vulnerability details unavailable";
+}
+
+/**
+ * Format a count together with its correctly-inflected noun, e.g.
+ * `plural(1, "point")` -> "1 point", `plural(2, "point")` -> "2 points".
+ *
+ * `pluralForm` defaults to `singular + "s"`; pass it explicitly for
+ * irregular nouns (`plural(2, "entry", "entries")`). The count is always
+ * included in the returned string, so call sites should not prepend it
+ * again — use this in place of `{count} <hardcoded plural noun>`, which
+ * misreads as e.g. "1 points" or "1 comments" when the count is 1.
+ */
+export function plural(
+  count: number,
+  singular: string,
+  pluralForm: string = `${singular}s`
+): string {
+  return `${count} ${count === 1 ? singular : pluralForm}`;
+}
+

@@ -189,7 +189,7 @@ export default function ThreatForecast() {
       <div className="panel rounded-lg overflow-hidden">
         {/* Search / filter toolbar */}
         <div className="border-b border-ui-border p-4">
-          <div className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="sm:col-span-2 lg:col-span-1">
               <label
                 htmlFor="cve-search"
@@ -207,7 +207,7 @@ export default function ThreatForecast() {
               />
             </div>
             <div>
-              <div className="mb-1 flex items-center justify-between gap-2">
+              <div className="mb-1 flex items-start justify-between gap-2">
                 <label
                   htmlFor="severity-filter"
                   className="control-label !mb-0"
@@ -218,11 +218,7 @@ export default function ThreatForecast() {
                   type="button"
                   aria-pressed={highCriticalOnly}
                   onClick={() => setHighCriticalOnly((current) => !current)}
-                  className={`control !min-h-0 rounded-md px-2.5 py-1 text-xs transition-colors ${
-                    highCriticalOnly
-                      ? "border-ui-control-border text-ui-accent"
-                      : "text-ui-secondary hover:border-ui-control-border"
-                  }`}
+                  className="control-chip"
                 >
                   High &amp; Critical
                 </button>
@@ -273,11 +269,7 @@ export default function ThreatForecast() {
                 type="button"
                 aria-pressed={isPrioritySort}
                 onClick={() => setSort(PRIORITY_SORT)}
-                className={`control !min-h-0 rounded-md px-3 py-1.5 text-xs transition-colors ${
-                  isPrioritySort
-                    ? "border-ui-control-border text-ui-accent"
-                    : "text-ui-secondary hover:border-ui-control-border"
-                }`}
+                className="control-chip"
               >
                 Priority
               </button>
@@ -285,11 +277,7 @@ export default function ThreatForecast() {
                 type="button"
                 aria-pressed={isNewestSort}
                 onClick={() => setSort(NEWEST_SORT)}
-                className={`control !min-h-0 rounded-md px-3 py-1.5 text-xs transition-colors ${
-                  isNewestSort
-                    ? "border-ui-control-border text-ui-accent"
-                    : "text-ui-secondary hover:border-ui-control-border"
-                }`}
+                className="control-chip"
               >
                 Newest first
               </button>

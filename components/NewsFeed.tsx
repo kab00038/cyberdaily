@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { NewsItem } from "@/lib/rss";
 import { canonicalCveId } from "@/lib/entities";
-import { formatPublishedAt, isPublishedWithin } from "@/lib/format";
+import { formatPublishedAt, isPublishedWithin, plural } from "@/lib/format";
 import NewsRow from "@/components/news/NewsRow";
 import NewsToolbar, {
   buildFilteredUrl,
@@ -192,8 +192,8 @@ export default function NewsFeed() {
   };
 
   const resultLabel = hasActiveFilters
-    ? `${visibleItems.length} matching stories · ${news.length} loaded`
-    : `${news.length} stories`;
+    ? `${plural(visibleItems.length, "matching story", "matching stories")} · ${news.length} loaded`
+    : plural(news.length, "story");
 
   return (
     <div className="space-y-3">

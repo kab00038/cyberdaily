@@ -6,10 +6,13 @@
 import { describe, expect, it } from "vitest";
 import {
   formatChartDate,
+  formatKevPrimaryLine,
+  formatKevVendorProduct,
   formatProbability,
   formatPublishedAt,
   isPublishedWithin,
   parseTimestamp,
+  plural,
 } from "@/lib/format";
 
 // Fixed reference clock: 2026-09-07 12:00:00 UTC.
@@ -150,5 +153,78 @@ describe("formatChartDate", () => {
   it("returns an empty string for missing values", () => {
     expect(formatChartDate(null)).toBe("");
     expect(formatChartDate("")).toBe("");
+  });
+});
+
+describe("plural", () => {
+  it("uses the singular form for a count of exactly 1", () => {
+    expect(plural(1, "point")).toBe("1 point");
+    expect(plural(1, "comment")).toBe("1 comment");
+  });
+
+  it("uses the default '+s' plural form for counts other than 1", () => {
+    expect(plural(0, "point")).toBe("0 points");
+    expect(plural(2, "point")).toBe("2 points");
+    expect(plural(100, "comment")).toBe("100 comments");
+  });
+
+  it("uses an explicit override for irregular plurals", () => {
+    expect(plural(1, "entry", "entries")).toBe("1 entry");
+    expect(plural(2, "entry", "entries")).toBe("2 entries");
+    expect(plural(0, "entry", "entries")).toBe("0 entries");
+  });
+
+  it("always includes the count in the returned string", () => {
+    expect(plural(42, "record")).toContain("42");
+  });
+});
+
+describe("formatKevVendorProduct", () => {
+  it("joins vendor and product with an em dash", () => {
+    expect(formatKevVendorProduct("Microsoft", "Windows")).toBe(
+      "Microsoft — Windows"
+    );
+  });
+
+  it("omits the missing side instead of a bare dash", () => {
+    expect(formatKevVendorProduct("Microsoft", "")).toBe("Microsoft");
+    expect(formatKevVendorProduct("", "Windows")).toBe("Windows");
+  });
+
+  it("returns an empty string when both sides are blank", () => {
+    expect(formatKevVendorProduct("", "")).toBe("");
+  });
+});
+
+describe("formatKevPrimaryLine", () => {
+  it("prefers the vulnerability name", () => {
+    expect(
+      formatKevPrimaryLine(
+        "Windows Kernel Elevation of Privilege Vulnerability",
+        "Microsoft",
+        "Windows"
+      )
+    ).toBe("Windows Kernel Elevation of Privilege Vulnerability");
+  });
+
+  it("falls back to vendor/product when the name is empty", () => {
+    expect(formatKevPrimaryLine("", "Microsoft", "Windows")).toBe(
+      "Microsoft — Windows"
+    );
+    expect(formatKevPrimaryLine("   ", "Microsoft", "")).toBe("Microsoft");
+  });
+
+  it("falls back to a placeholder when everything is empty", () => {
+    expect(formatKevPrimaryLine("", "", "")).toBe(
+      "Vulnerability details unavailable"
+    );
+  });
+
+  it("never falls back to required-action-style boilerplate", () => {
+    // formatKevPrimaryLine takes no requiredAction argument at all, so
+    // there is no way for boilerplate remediation text to leak into the
+    // headline — this just documents the guarantee explicitly.
+    const result = formatKevPrimaryLine("", "", "");
+    expect(result).not.toMatch(/vendor instructions|BOD/i);
   });
 });

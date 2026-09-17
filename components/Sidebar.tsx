@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navItems } from "@/components/navigation";
+import { isNavItemActive, navItems } from "@/components/navigation";
 import SourceHealthIndicator from "@/components/SourceHealthIndicator";
 
 interface SidebarProps {
@@ -59,9 +59,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }: SidebarProps) {
       {/* Navigation */}
       <nav aria-label="Primary" className="px-3 py-6 space-y-1">
         {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href + "/"));
+          const isActive = isNavItemActive(pathname, item);
           return (
             <Link
               key={item.href}

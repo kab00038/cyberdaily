@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatPublishedAt } from "@/lib/format";
+import { formatPublishedAt, plural } from "@/lib/format";
 
 interface OsintPost {
   title: string;
@@ -188,7 +188,7 @@ export default function OsintFeed() {
                     {post.score ?? "—"}
                   </span>
                   {post.comments != null && (
-                    <span>{post.comments} comments</span>
+                    <span>{plural(post.comments, "comment")}</span>
                   )}
                   <span>{formatPublishedAt(post.publishedAt)}</span>
                 </p>

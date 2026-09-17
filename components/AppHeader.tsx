@@ -8,15 +8,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import SourceHealthIndicator from "@/components/SourceHealthIndicator";
-
-const TITLES: Record<string, string> = {
-  "/": "Today",
-  "/news": "News",
-  "/threats": "Vulnerabilities",
-  "/community": "Community",
-  "/analytics": "Analytics",
-  "/sources": "Sources",
-};
+import { resolveBreadcrumb } from "@/lib/breadcrumb";
 
 export default function AppHeader({
   mobileOpen,
@@ -34,7 +26,7 @@ export default function AppHeader({
     setLoadedAt(new Date());
   }, []);
 
-  const title = TITLES[pathname] ?? "Today";
+  const { section, page } = resolveBreadcrumb(pathname);
   const timeLabel = loadedAt
     ? loadedAt.toLocaleTimeString("en-US", { timeZone: "UTC", hour12: false })
     : "";
@@ -65,7 +57,7 @@ export default function AppHeader({
             </svg>
           </button>
           <p className="text-xs font-medium text-ui-muted">
-            <span className="hidden sm:inline">Briefing / </span>{title}
+            <span className="hidden sm:inline">{section} / </span>{page}
           </p>
         </div>
         <div className="flex items-center gap-1 sm:gap-3">

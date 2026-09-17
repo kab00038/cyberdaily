@@ -8,7 +8,7 @@ import {
   Geography,
   Marker,
 } from "react-simple-maps";
-import { formatPublishedAt } from "@/lib/format";
+import { formatPublishedAt, plural } from "@/lib/format";
 
 interface ThreatMapEntry {
   sourceIP: string;
@@ -195,7 +195,7 @@ export default function ThreatMap() {
         </div>
         <div className="hidden sm:flex items-center gap-2 text-xs text-ui-muted font-mono shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-ui-muted" />
-          {clusters.length} source regions
+          {plural(clusters.length, "source region")}
         </div>
       </div>
 
@@ -240,7 +240,7 @@ export default function ThreatMap() {
               const scale = isSelected ? 1.5 : 1;
               const baseRadius = Math.sqrt(cluster.count / maxCount) * 10 + 4;
               const radius = baseRadius * scale;
-              const label = `${countryName(cluster.country)}, ${cluster.count} sampled records`;
+              const label = `${countryName(cluster.country)}, ${plural(cluster.count, "sampled record")}`;
               return (
                 <Marker
                   key={cluster.country}
@@ -298,7 +298,7 @@ export default function ThreatMap() {
                 {countryName(activeCluster.country)}
               </div>
               <div className="text-ui-secondary mt-1 font-mono">
-                {activeCluster.count} sampled record{activeCluster.count > 1 ? "s" : ""}
+                {plural(activeCluster.count, "sampled record")}
               </div>
               <div className="text-ui-muted mt-1 max-w-[200px] truncate">
                 {activeCluster.threats.join(", ")}
@@ -315,7 +315,7 @@ export default function ThreatMap() {
             {selectedCluster && (
               <div className="mt-2 text-ui-accent font-mono">
                 Selected: {countryName(selectedCluster.country)} ·{" "}
-                {selectedCluster.count} record{selectedCluster.count > 1 ? "s" : ""}
+                {plural(selectedCluster.count, "record")}
               </div>
             )}
           </div>
@@ -327,7 +327,7 @@ export default function ThreatMap() {
             <h3 className="section-title">Country distribution</h3>
             <p className="metadata mt-0.5">
               {totalRecords > 0
-                ? `${totalRecords} sampled records · sorted by count`
+                ? `${plural(totalRecords, "sampled record")} · sorted by count`
                 : "No records yet"}
             </p>
 

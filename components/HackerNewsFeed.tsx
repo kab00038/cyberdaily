@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatPublishedAt } from "@/lib/format";
+import { formatPublishedAt, plural } from "@/lib/format";
 
 interface HNStory {
   title: string;
@@ -106,8 +106,8 @@ export default function HackerNewsFeed() {
                   </a>
                 </h3>
                 <p className="metadata">
-                  {formatPublishedAt(story.publishedAt)} · {story.points} points ·{" "}
-                  {story.comments} comments
+                  {formatPublishedAt(story.publishedAt)} · {plural(story.points, "point")} ·{" "}
+                  {plural(story.comments, "comment")}
                 </p>
                 <div className="community-row-actions">
                   {story.url !== story.hnUrl ? (
