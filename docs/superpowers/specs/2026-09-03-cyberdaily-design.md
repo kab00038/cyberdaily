@@ -1,5 +1,19 @@
 # CyberDaily — Cybersecurity News Dashboard Design Spec
 
+> **Status: superseded — historical record.**
+>
+> This is the original design spec from the first build (2026-09-03). The
+> shipped application differs from it substantially and deliberately: it runs
+> Next.js 15 rather than 14, spans six routes rather than a single dashboard
+> page, parses RSS with `fast-xml-parser` rather than `rss-parser`, and replaced
+> the neon `#00ff88`-on-black, monospace-body direction described below with the
+> calmer editorial system documented in the README.
+>
+> Kept for provenance. **Do not implement from this document.** See
+> [`README.md`](../../../README.md) for current behaviour and
+> [`../plans/2026-09-17-frontend-design-improvements.md`](../plans/2026-09-17-frontend-design-improvements.md)
+> for active work.
+
 ## Overview
 
 CyberDaily is a daily-use cybersecurity news dashboard that aggregates real-time threat intelligence, news, and visualizations from free, production-safe sources. Deployed on Cloudflare Pages.

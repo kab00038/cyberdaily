@@ -20,7 +20,7 @@ and mobile layouts; the vulnerability register switches from a table to cards.
 
 | Path | Page | Contents |
 | --- | --- | --- |
-| `/` | Today | Page header, three summary metric cards (CVEs, KEV, news), a 2:1 Latest stories / Recent KEV preview grid, a reported-IP sample map, and a 14-day CVE trend chart. The stories preview uses the same recency normalization as the News page so future-dated items cannot lead. |
+| `/` | Today | Page header, three summary metric cards (CVEs, KEV, news), a 2:1 Latest stories / Recent KEV preview grid, a reported-IP sample map, and a 14-day CVE trend chart. The stories preview uses the same recency normalization as the News page so future-dated items cannot lead. KEV previews lead with the vulnerability name and short description rather than the required-action text, which CISA repeats verbatim across entries; the required action is shown on the CVE detail page, where it is specific to the record being read. |
 | `/news` | News | Searchable feed with URL-backed filters (`q`, `cve`, `source`, `period`, `sort`) that survive reload, back, and share. Stories that name a CVE explicitly carry a reference link to that record. A "New stories available" banner refreshes in place without jarring reordering; failed refreshes keep the prior content with a stale timestamp. |
 | `/threats` | Vulnerabilities | Sortable semantic table (card view on small screens), severity and exploitation filters, and expandable rows opening a full CveDetails read-out (CVSS, EPSS, attack vector, CWE, KEV, references). |
 | `/cve/[id]` | CVE detail | Exact per-CVE lookup with a direct NVD fallback for CVEs outside the loaded snapshot, a copy-to-clipboard CVE ID, an explicit KEV-only fallback state, a "last fetched" timestamp, and a browser-local review panel (save, review status, private note, export/import/reset). |
@@ -100,6 +100,43 @@ applied in four passes:
    NVD links, a "last fetched" timestamp, and a KEV-only indicator on
    Vulnerabilities table rows.
 4. **Pass 4 — documentation.** This README refresh.
+
+## Frontend design review (2026-09-17)
+
+A review of the deployed site across all six routes at desktop, laptop, and
+mobile widths, with a programmatic pass over contrast, tap targets, heading
+order, landmarks, accessible names, and line measure. It found no WCAG AA
+contrast failures and a clean heading hierarchy, and recorded 22 findings
+(F1–F22) that are mostly information density rather than styling.
+
+The review and its ten-wave implementation plan live in
+`docs/superpowers/plans/2026-09-17-frontend-design-improvements.md`. Section 2
+of that document lists constraints that must survive every wave.
+
+**Wave 1 — correctness (complete).**
+
+- KEV previews on the Today page rendered five visually identical rows, because
+  each showed `requiredAction`, which CISA repeats verbatim across entries. They
+  now lead with `vulnerabilityName` and `shortDescription`, which are distinct
+  per record and were already being fetched.
+- The Vulnerabilities filter toolbar had a 13px baseline misalignment caused by
+  a quick-filter button inheriting a 44px `min-height`. A dedicated
+  `.control-chip` class replaces the override, and returns to a 44px minimum at
+  mobile widths for touch.
+- Sort and quick-filter toggles had identical computed background, border, and
+  text color in both states, so the active option was invisible to sighted
+  users. State is now driven off `aria-pressed` in CSS, with an inset ring as a
+  non-color cue so it survives a grayscale check.
+- CVE detail pages read "Briefing / Today" and left no nav item current, because
+  the header used an exact-pathname title map. A resolver in `lib/breadcrumb.ts`
+  now handles dynamic routes, and `lib/nav-active.ts` marks Vulnerabilities
+  current on `/cve/*` for both the sidebar and the mobile drawer.
+- Counts rendered as "1 points", "1 comments", and "1 sampled records". A
+  `plural()` helper in `lib/format.ts` is applied at every count call site.
+
+Waves 2–5 cover information design, reading density, and platform polish.
+Waves 6–10 migrate the visual system to WebTUI for a terminal-UI aesthetic,
+keeping the reading typeface, the validated palette, and the severity ramp.
 
 ## Feature milestone: connected evidence and local review
 

@@ -1,254 +1,89 @@
-# CyberDaily — Project Handoff Document
+# CyberDaily — Project Handoff
 
-## What This Is
+**Last updated:** 2026-09-17
 
-A cybersecurity daily news dashboard with:
-- Recent cybersecurity news from RSS feeds
-- Threat forecasts (CISA KEV, NVD CVE)
-- World threat map with animated attack arcs
-- Hacker News cybersecurity stories
-- Dark theme, deployed on Cloudflare Pages
-
-**GitHub Repo:** https://github.com/kab00038/cyberdaily
+Start here if you are picking this project up. For what the app *is* and what
+every page, route, and data source does, read [`README.md`](README.md) — it is
+the authoritative description and is kept current.
 
 ---
 
-## What's Been Done
+## Current state
 
-### 1. Cloudflare MCP Setup ✅
-Added Cloudflare MCP servers to `~/.config/opencode/opencode.jsonc`:
-- `cloudflare` — Main Cloudflare MCP
-- `cloudflare-docs` — Documentation (public, no auth)
-- `cloudflare-bindings` — Bindings
-- `cloudflare-builds` — Builds/CI
-- `cloudflare-observability` — Observability
+CyberDaily is **built and deployed**, not in progress.
 
-**Next step:** Run `opencode mcp auth cloudflare` to authenticate.
+- **Live:** https://cyberdaily.pages.dev (Cloudflare Pages)
+- **Repo:** https://github.com/kab00038/cyberdaily
+- **Stack:** Next.js 15.5 App Router, React 19, TypeScript 5, Tailwind CSS 3
+- **Routes:** six pages (`/`, `/news`, `/threats`, `/community`, `/analytics`,
+  `/sources`) plus `/cve/[id]`, and eight Edge API routes
+- **Tests:** 102 across 8 Vitest files, all passing
+- **Build:** clean (`npm run lint && npm run test && npm run build`)
 
-### 2. GitHub CLI Installed ✅
-- Installed `gh` CLI to `~/.local/bin/gh`
-- Authenticated as `kab00038` via device flow
+## Quick start
 
-### 3. GitHub Repo Created ✅
-- Repo: https://github.com/kab00038/cyberdaily
-- Initialized with README.md
-- Design spec pushed
-- Implementation plan pushed
-
-### 4. Design Spec Written ✅
-**File:** `docs/superpowers/specs/2026-09-03-cyberdaily-design.md`
-
-Key decisions:
-- **Tech stack:** Next.js 14 (App Router)
-- **Data sources:** RSS feeds + Hacker News API + CISA KEV + NVD CVE + abuse.ch (all free, production-safe)
-- **Threat map:** World map with animated arcs using `react-simple-maps`
-- **Styling:** Dark theme, cyber green (#00ff88) accent, JetBrains Mono font
-- **Deployment:** Cloudflare Pages with `@cloudflare/next-on-pages`
-
-### 5. Implementation Plan Written ✅
-**File:** `docs/superpowers/plans/2026-09-03-cyberdaily-implementation.md`
-
-12 tasks covering:
-1. Project Setup and Dependencies
-2. RSS Feed Library
-3. Hacker News API Client
-4. Threat Intelligence Clients (NVD, CISA KEV, abuse.ch, GeoIP)
-5. API Routes
-6. Header and StatsBar Components
-7. ThreatMap Component
-8. NewsFeed Component
-9. ThreatForecast and HackerNewsFeed Components
-10. Main Dashboard Page
-11. Build and Deploy Configuration
-12. Final Testing and Push
-
-### 6. Project Partially Initialized ⚠️
-- `create-next-app` was run but may need cleanup
-- Some npm dependencies installed (`react-simple-maps`, `framer-motion`, `rss-parser`, `recharts`)
-- Still need: `d3-geo`, `@cloudflare/next-on-pages`, `@types/d3-geo`
-- Tailwind config not yet customized for dark theme
-
----
-
-## What's Left To Do
-
-### Immediate Next Steps
-
-1. **Finish npm install:**
-   ```bash
-   cd /home/kyle/Projects/cyberdaily
-   npm install d3-geo @cloudflare/next-on-pages --legacy-peer-deps
-   npm install -D @types/d3-geo
-   ```
-
-2. **Configure Tailwind for dark theme** — replace `tailwind.config.ts`:
-   ```typescript
-   import type { Config } from "tailwindcss";
-
-   const config: Config = {
-     content: [
-       "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-       "./components/**/*.{js,ts,jsx,tsx,mdx}",
-       "./app/**/*.{js,ts,jsx,tsx,mdx}",
-     ],
-     theme: {
-       extend: {
-         colors: {
-           cyber: {
-             green: "#00ff88",
-             dark: "#0a0a0a",
-             navy: "#1a1a2e",
-             red: "#ff6b6b",
-           },
-         },
-         fontFamily: {
-           mono: ["JetBrains Mono", "monospace"],
-         },
-       },
-     },
-     plugins: [],
-   };
-   export default config;
-   ```
-
-3. **Update `app/globals.css`:**
-   ```css
-   @tailwind base;
-   @tailwind components;
-   @tailwind utilities;
-
-   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
-   body {
-     background-color: #0a0a0a;
-     color: #e0e0e0;
-     font-family: 'JetBrains Mono', monospace;
-   }
-
-   ::-webkit-scrollbar {
-     width: 8px;
-   }
-
-   ::-webkit-scrollbar-track {
-     background: #1a1a2e;
-   }
-
-   ::-webkit-scrollbar-thumb {
-     background: #00ff88;
-     border-radius: 4px;
-   }
-   ```
-
-4. **Update `app/layout.tsx`:**
-   ```typescript
-   import type { Metadata } from "next";
-   import "./globals.css";
-
-   export const metadata: Metadata = {
-     title: "CyberDaily - Cybersecurity News Dashboard",
-     description: "Daily cybersecurity news, threat forecasts, and real-time threat intelligence",
-   };
-
-   export default function RootLayout({
-     children,
-   }: Readonly<{
-     children: React.ReactNode;
-   }>) {
-     return (
-       <html lang="en">
-         <body className="min-h-screen bg-cyber-dark">
-           {children}
-         </body>
-       </html>
-     );
-   }
-   ```
-
-5. **Create `wrangler.toml`:**
-   ```toml
-   name = "cyberdaily"
-   compatibility_date = "2024-01-01"
-   compatibility_flags = ["nodejs_compat"]
-
-   [site]
-   bucket = ".vercel/output/static"
-   ```
-
-### Then Follow Implementation Plan
-
-All remaining code is in `docs/superpowers/plans/2026-09-03-cyberdaily-implementation.md`:
-
-- **Task 2:** `lib/rss.ts` — RSS feed parser
-- **Task 3:** `lib/hn.ts` — Hacker News API client
-- **Task 4:** `lib/nvd.ts`, `lib/abuse-ch.ts`, `lib/geoip.ts` — Threat intel clients
-- **Task 5:** `app/api/*/route.ts` — API routes
-- **Task 6:** `components/Header.tsx`, `components/StatsBar.tsx`
-- **Task 7:** `components/ThreatMap.tsx` — World map with animated arcs
-- **Task 8:** `components/NewsFeed.tsx`
-- **Task 9:** `components/ThreatForecast.tsx`, `components/HackerNewsFeed.tsx`
-- **Task 10:** `app/page.tsx` — Main dashboard
-- **Task 11:** Build/deploy config, GitHub Actions
-- **Task 12:** Test and push
-
----
-
-## Data Sources (All Free, Production-Safe)
-
-| Source | Endpoint | Auth | Cache |
-|--------|----------|------|-------|
-| BleepingComputer | RSS feed | None | 15 min |
-| The Hacker News | RSS feed | None | 15 min |
-| Krebs on Security | RSS feed | None | 15 min |
-| Dark Reading | RSS feed | None | 15 min |
-| SecurityWeek | RSS feed | None | 15 min |
-| The Record | RSS feed | None | 15 min |
-| Hacker News Algolia | `hn.algolia.com/api/v1/search` | None | 15 min |
-| CISA KEV | JSON feed | None | 1 hour |
-| NVD CVE API 2.0 | REST API | Free key (optional) | 1 hour |
-| abuse.ch URLhaus | JSON feed | Free auth key | 5 min |
-
-**Note:** NewsAPI.org is NOT for production use (dev-only, 24h delayed). Reddit is now restricted (2026). Use the sources above instead.
-
----
-
-## Environment Variables Needed
-
-```
-NVD_API_KEY=          # Optional, increases rate limit from 5 to 50 req/30s
-ABUSE_CH_AUTH_KEY=    # Get free key from https://auth.abuse.ch/
-```
-
----
-
-## Cloudflare Deployment
-
-After building, deploy with:
 ```bash
-npm run pages:build    # Builds with @cloudflare/next-on-pages
-npm run pages:deploy   # Deploys to Cloudflare Pages
+npm ci
+npm run dev          # http://localhost:3000
+npm test             # Vitest
+npm run lint         # ESLint
+npx tsc --noEmit     # type-check
+npm run build        # production build
 ```
 
-Or set up GitHub Actions (code in Task 11 of the plan) with these secrets:
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
+Optional: set `GROQ_API_KEY` in `.env.local` for AI news summaries. Without it
+the news endpoint serves RSS immediately and enrichment is skipped. `NVD_API_KEY`
+raises the NVD rate limit but is not required.
 
----
+Deploy: `npm run pages:build && npm run pages:deploy`.
 
-## Key Files
+## Active work
 
-| File | Purpose |
-|------|---------|
-| `docs/superpowers/specs/2026-09-03-cyberdaily-design.md` | Design spec |
-| `docs/superpowers/plans/2026-09-03-cyberdaily-implementation.md` | Full implementation plan with all code |
-| `~/.config/opencode/opencode.jsonc` | OpenCode config with Cloudflare MCP |
+Frontend design work is tracked in
+[`docs/superpowers/plans/2026-09-17-frontend-design-improvements.md`](docs/superpowers/plans/2026-09-17-frontend-design-improvements.md).
+That plan is the current source of truth for what is being changed and why. It
+contains a design review (22 findings, F1–F22), binding constraints in section 2,
+and a ten-wave implementation plan.
 
----
+**Wave 1 (correctness) is complete.** Waves 2–5 fix information design, reading
+density, and platform polish. Waves 6–10 migrate the visual system to
+[WebTUI](https://webtui.ironclad.sh/) for a terminal-UI aesthetic.
 
-## Quick Start for Next Agent
+Before changing anything in the frontend, read section 2 of that plan — several
+properties of this codebase are deliberate and are easy to destroy by accident:
 
-1. `cd /home/kyle/Projects/cyberdaily`
-2. Read `docs/superpowers/plans/2026-09-03-cyberdaily-implementation.md`
-3. Start from Task 1 (finish setup) then follow the plan sequentially
-4. All code for each task is in the plan — just copy it in
-5. Test with `npm run dev` after each task
-6. Deploy with `npm run pages:build && npm run pages:deploy`
+- The color palette passes WCAG AA with **zero failures**. Re-run a contrast
+  sweep if you touch the `:root` tokens in `app/globals.css`.
+- Partial-data and sampling disclaimers are load-bearing, not filler. The
+  project's stated goal is that nothing reads as larger or fresher than it is.
+- Accessibility work already in place: one `h1` per page, clean heading order,
+  skip link, `:focus-visible`, 44px touch targets, `aria-sort`, `aria-pressed`,
+  `sr-only` table caption, and a `prefers-reduced-motion` block.
+
+## Working with agents
+
+Waves are run by subagents, one wave at a time, with the site kept working after
+each. Two rules learned the hard way:
+
+1. **Give each agent its own git worktree.** Agents sharing one checkout will
+   race each other's builds and, in at least one case, `git reset` away another
+   agent's work.
+2. **One owner for `app/globals.css` per wave.** Every other agent in that wave
+   hands its CSS to the owner in its report instead of editing the file.
+
+Verify agent work by measurement against a running build, not by reading the
+agent's report. The API routes call external services, so local verification
+needs mocked responses matching the real `RiskScoredCVE` and `KEVItem` shapes.
+
+## Historical documents
+
+These are point-in-time records from the original build. They describe an
+earlier design and stack and are **superseded** — do not implement from them:
+
+| File | Status |
+| --- | --- |
+| `docs/superpowers/specs/2026-09-03-cyberdaily-design.md` | Superseded — original design spec (Next.js 14, neon `#00ff88`, monospace body) |
+| `docs/superpowers/plans/2026-09-03-cyberdaily-implementation.md` | Superseded — original 12-task build plan, completed |
+
+The shipped design deliberately moved away from the neon-on-black direction in
+the original spec toward the calmer editorial system described in the README.

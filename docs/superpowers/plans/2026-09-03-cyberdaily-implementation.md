@@ -1,5 +1,16 @@
 # CyberDaily Implementation Plan
 
+> **Status: superseded — historical record.**
+>
+> This is the original 12-task build plan from 2026-09-03. Its tasks are
+> complete and the codebase has moved on; file paths, component names, and the
+> visual direction in the embedded code no longer match what ships.
+>
+> Kept for provenance. **Do not implement from this document.** See
+> [`README.md`](../../../README.md) for current behaviour and
+> [`2026-09-17-frontend-design-improvements.md`](2026-09-17-frontend-design-improvements.md)
+> for active work.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a cybersecurity daily news dashboard with threat maps, forecasts, and real-time intel, deployed on Cloudflare Pages.
