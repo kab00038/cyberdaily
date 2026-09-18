@@ -134,9 +134,36 @@ of that document lists constraints that must survive every wave.
 - Counts rendered as "1 points", "1 comments", and "1 sampled records". A
   `plural()` helper in `lib/format.ts` is applied at every count call site.
 
-Waves 2–5 cover information design, reading density, and platform polish.
-Waves 6–10 migrate the visual system to WebTUI for a terminal-UI aesthetic,
-keeping the reading typeface, the validated palette, and the severity ramp.
+**Wave 2 — information design (complete).**
+
+- The "14-day CVE trend" chart fabricated zeros. NVD returns roughly 100 of 8677
+  CVEs in the window, clustered in about two days, and the chart laid a
+  contiguous 14-day range over them and filled every uncovered day with zero —
+  so eleven of fourteen zeros meant "not sampled" but read as "none published".
+  That contradicted the no-fabricated-zeros guarantee above. It is replaced on
+  both the Today and Analytics pages by the EPSS score distribution, which was
+  already computed server-side and never rendered, and which describes the
+  loaded snapshot rather than implying a population trend.
+- Analytics used three different bar treatments on one page. All distributions
+  now share one grammar; severity keeps its semantic colour ramp because that
+  colour carries meaning.
+- Top weakness types is a ranked list with human-readable CWE names
+  (`lib/cwe-names.ts`) instead of eight cards holding one number each. Unmapped
+  IDs fall back to the bare identifier rather than an invented name.
+- The sampling caveat around the reported-IP map was stated three times and is
+  now stated once, inside the panel. The Vulnerabilities page stated its partial
+  coverage three times and now separates one static scope line from live filter
+  feedback, with distinct copy for the complete, partial, unknown, and error
+  states.
+- Community feeds had no visible order: `lib/hn.ts` queries Algolia's
+  relevance-ranked endpoint and bounds by date without sorting by it. The route
+  now sorts explicitly, both feeds gained Recent and Top toggles, undated items
+  sink rather than sorting as "now", and a null engagement count sorts below a
+  real zero.
+
+Waves 3–5 cover reading density and platform polish. Waves 6–10 migrate the
+visual system to WebTUI for a terminal-UI aesthetic, keeping the reading
+typeface, the validated palette, and the severity ramp.
 
 ## Feature milestone: connected evidence and local review
 

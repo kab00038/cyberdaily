@@ -177,6 +177,55 @@ Five agents, fully parallel. No file overlap.
 
 **Task 2.1 runs first and alone** — it's a decision, and 2.2/2.3 depend on the answer.
 
+### Wave 2 — ✅ COMPLETE (2026-09-17)
+
+**2.1 decision: option (b) — replace with a question the data can answer.**
+
+Root cause was worse than the review recorded. `buildDayBins()` in
+`app/api/trends/route.ts` laid a contiguous 14-day range over bucketed CVEs and
+filled every uncovered day with `count: 0`. There was a guard for *no* records in
+window but none for **partial** coverage, which is the normal case — NVD returns
+100 of ~8677 CVEs, clustered in ~2 days. Eleven of fourteen zeros were
+"not sampled" rendered as "none published". This violated the README's own
+Truthfulness guarantee that *"trend charts with missing data never auto-zero."*
+
+`epssDistribution` and `riskBreakdown` were **already computed and returned** by
+the route and never rendered — the same latent-data situation as F1.
+
+| Finding | Result |
+| --- | --- |
+| F2 trend chart | Gone from `/` and `/analytics`; replaced by EPSS score distribution stating its own scope inline ("100 loaded CVEs, 100 EPSS scored"). `buildDayBins`/`dailyTrend`/`coverageNote` deleted; **zero dead references** remain |
+| F10 chart grammar | All four distributions share one grammar — same bar height, track, label/value alignment, no axis anywhere. Severity keeps its semantic ramp; vendor mentions' axis-bearing recharts `BarChart` removed |
+| F11 CWE section | Eight cards → ranked list with human-readable names (`lib/cwe-names.ts`, 20 IDs). Verified: `CWE-787 Out-of-bounds Write`, and `CWE-999999` falls back to the bare ID |
+| F7 map disclaimers | 3 statements → **1**, inside the panel: "blocklist.de · category-balanced sample with IP geolocation, not a count of worldwide attacks." |
+| F7 /threats warnings | 3 → 2 (static scope + live filter count). The word "Showing" appears **0** times. Distinct copy for all four states: complete / partial / unknown / nvdError |
+| F12 community order | Recent (default) and Top toggles on both feeds, reusing Wave 1's `.control-chip` idiom. Verified: Recent sinks the undated item; Top ranks by points and sinks the null-score item below `0` |
+| Heading order | `h1 → h3` skip on `/analytics` closed; all five chart headings now `h2` |
+| Bonus | OSINT's lone "All" chip was derived from whatever subreddits the fetch returned; now sourced from the fixed monitored list — 9 real options |
+
+Lint clean, **117 tests passing (up from 102)**, build green, no page errors, no
+horizontal overflow at 375 / 1440 on any route.
+
+**Diagnosed but deliberately not changed** (needs a decision, not a guess):
+`lib/hn.ts` queries Algolia's relevance-ranked `/search` endpoint rather than
+`/search_by_date`, and bounds by date without sorting by it — that is why the
+live order tracked neither recency nor points. The route now sorts server-side,
+but `hitsPerPage` is a constant of 20 inside `lib/hn.ts`, so weak 1–9 point items
+still compete for those slots. The fetch window was widened 7 → 14 days as a
+conservative improvement; this was a code-path judgement, **not measured**, since
+the container has no egress to Algolia.
+
+**Wave 9 input:** after this wave, `recharts` has no live consumer. Only
+`components/ThreatSurface.tsx` still imports it, and that file is dead code —
+not imported by any route. Task 9.2's "drop Recharts" option is now cheap.
+
+**Process:** each agent ran in its own git worktree with zero file overlap. No
+collisions, unlike Wave 1. Note that agent worktrees under `.claude/` pollute
+ESLint's scope if not removed — lint reported 26,299 problems until they were
+pruned, none of them from agent code.
+
+---
+
 **2.1 — Decide what the trend chart should be.** *(written recommendation + spike branch, no merge)*
 
 Three candidates, evaluated against a real API response:
@@ -361,8 +410,8 @@ Deliverable: before/after screenshots per route, a pass/fail table, and an expli
 | Wave | Agents | Gate |
 |---|---|---|
 | ✅ 1 — Correctness | 5 | **Complete 2026-09-17** |
-| 2.1 — Chart decision | 1 | **Kyle picks a direction** |
-| 2.2–2.6 — Info design | 5 | Kyle reviews + commits |
+| ✅ 2.1 — Chart decision | 1 | **Complete — option (b) chosen** |
+| ✅ 2.2–2.6 — Info design | 3 | **Complete 2026-09-17** |
 | 3 — Density (3.1 owns CSS) | 4 | Kyle reviews + commits |
 | 4 — Polish (4.2 owns CSS) | 7 | Kyle reviews + commits |
 | 5 — Verification | 1 | **Baseline locked** |
