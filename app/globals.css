@@ -1,4 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+/* Fonts are loaded via next/font/google in app/layout.tsx (F19) — self-hosted,
+   font-display: swap, no render-blocking @import. app/layout.tsx sets
+   --font-display (Space Grotesk), --font-body (DM Sans), and --font-mono
+   (JetBrains Mono) as CSS variables on <html>; every font-family declaration
+   below references one of those variables instead of a literal family name,
+   so this file and tailwind.config.ts both resolve to the same loaded faces. */
 
 @tailwind base;
 @tailwind components;
@@ -36,7 +41,7 @@ body {
   background: var(--cd-canvas);
   min-height: 100vh;
   color: var(--cd-text);
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
   line-height: 1.6;
 }
 
@@ -44,11 +49,11 @@ html { scroll-padding-top: 5rem; }
 ::selection { background: #285d43; color: #fff; }
 
 .font-mono {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
 }
 
 .font-display {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-display), system-ui, sans-serif;
 }
 
 /* Keyboard focus — visible against all surface tones. */
@@ -94,7 +99,7 @@ html { scroll-padding-top: 5rem; }
 /* Typography utility classes — match the blueprint's type table. */
 .page-title {
   margin: 0;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-display), system-ui, sans-serif;
   font-size: clamp(2rem, 1.5rem + 1.5vw, 2.75rem);
   font-weight: 500;
   letter-spacing: -0.045em;
@@ -117,14 +122,19 @@ html { scroll-padding-top: 5rem; }
    those either need the full width or already sit in a narrow column where
    a cap would do nothing.
 
-   On 55ch rather than the ~68ch you might expect: CSS `ch` is the width of
-   the "0" glyph, which in DM Sans is 0.637em, while an average character in
-   running English text measures 0.499em. So a `ch` cap renders roughly 1.27x
-   more characters than its number suggests — `68ch` was measured at 87
-   characters per line, well past the 45-75 comfortable band. 55ch measures
-   ~70. Re-measure before changing this; do not "correct" it back upward. */
+   On the value: CSS `ch` is the width of the "0" glyph, which in DM Sans is
+   substantially wider than an average character in running English text. A
+   `ch` cap therefore renders roughly 1.5x more characters than its number
+   suggests — `68ch` measured 87 characters per line, well past the 45-75
+   comfortable band.
+
+   This was first set to 55ch against a measurement taken while the sandbox
+   had Google Fonts blocked, so it was measured against a fallback face rather
+   than DM Sans. With DM Sans actually loaded, 55ch renders 81 characters. The
+   value below is measured against the real font. Re-measure with the real
+   webfont loaded before changing it; do not "correct" it back upward. */
 .prose-measure {
-  max-width: 55ch;
+  max-width: 48ch;
 }
 
 /* Page-level hierarchy — each page renders exactly one content h1 in a
@@ -142,7 +152,7 @@ html { scroll-padding-top: 5rem; }
 }
 
 .section-title {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: var(--font-display), system-ui, sans-serif;
   font-size: 1.125rem;
   font-weight: 500;
   line-height: 1.35;
@@ -178,7 +188,7 @@ html { scroll-padding-top: 5rem; }
 }
 
 .metric-number {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
   font-weight: 500;
   line-height: 1.25;
@@ -234,7 +244,7 @@ html { scroll-padding-top: 5rem; }
 
 .vulnerability-table .cve-id {
   white-space: nowrap;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
 }
 
 .vulnerability-table .summary {
@@ -387,6 +397,28 @@ html { scroll-padding-top: 5rem; }
   padding: 32px;
 }
 
+/* Footer landmark (F18) — a footnote, not a section. Muted text, a thin top
+   border, no accent or new colour, matched to .page-content's width and
+   padding so it lines up with everything above it. */
+.app-footer {
+  max-width: 90rem;
+  margin-inline: auto;
+  padding: 20px 32px 32px;
+  border-top: 1px solid var(--cd-border);
+  color: var(--cd-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.app-footer-line {
+  margin: 0;
+}
+.app-footer-line + .app-footer-line {
+  margin-top: 4px;
+}
+.app-footer-build {
+  font-family: var(--font-mono), monospace;
+}
+
 @media (min-width: 64rem) {
   .app-sidebar {
     display: block;
@@ -405,6 +437,7 @@ html { scroll-padding-top: 5rem; }
 
 @media (max-width: 40rem) {
   .page-content { padding: 16px; }
+  .app-footer { padding: 16px 16px 24px; }
 }
 
 /* Mobile navigation drawer — slides in from the left on small screens. */
@@ -519,7 +552,7 @@ main {
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--cd-secondary);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
 }
 @media (max-width: 40rem) {
@@ -575,7 +608,7 @@ main {
 /* Editorial briefing system: a masthead, measured ledger, and reading rows. */
 .eyebrow {
   margin-bottom: 12px;
-  font: 500 0.6875rem/1.5 'JetBrains Mono', monospace;
+  font: 500 0.6875rem/1.5 var(--font-mono), monospace;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--cd-muted);
@@ -587,12 +620,12 @@ main {
 .metric-cell + .metric-cell { border-left: 1px solid var(--cd-border); }
 .metric-cell .metric-number { color: var(--cd-text); }
 .metric-label { margin-top: 8px; font-size: 0.875rem; color: var(--cd-secondary); }
-.metric-scope { margin-top: 4px; font: 400 0.6875rem/1.6 'JetBrains Mono', monospace; color: var(--cd-muted); }
+.metric-scope { margin-top: 4px; font: 400 0.6875rem/1.6 var(--font-mono), monospace; color: var(--cd-muted); }
 .metric-cell[href] { transition: background-color 180ms ease-out; }
 .metric-cell[href]:hover { background: var(--cd-raised); }
 .metric-cell[href]:hover .metric-label { color: var(--cd-accent); }
-.brand-wordmark { font: 600 1.125rem/1.2 'Space Grotesk', sans-serif; letter-spacing: -0.05em; }
-.brand-mark { display: grid; place-items: center; width: 28px; height: 32px; border-block: 2px solid var(--cd-accent); color: var(--cd-accent); font: 600 0.8125rem 'JetBrains Mono', monospace; }
+.brand-wordmark { font: 600 1.125rem/1.2 var(--font-display), sans-serif; letter-spacing: -0.05em; }
+.brand-mark { display: grid; place-items: center; width: 28px; height: 32px; border-block: 2px solid var(--cd-accent); color: var(--cd-accent); font: 600 0.8125rem var(--font-mono), monospace; }
 .sidebar-content { display: flex; flex-direction: column; min-height: 100dvh; }
 .sidebar-footer { margin-top: auto; padding: 24px 16px; }
 .nav-link { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border-left: 2px solid transparent; border-radius: 0 4px 4px 0; color: var(--cd-secondary); transition: background-color 180ms ease-out; }
@@ -619,7 +652,7 @@ main {
   border: 1px solid var(--cd-border);
   border-radius: var(--cd-radius);
   color: var(--cd-secondary);
-  font: 400 0.6875rem/1 'JetBrains Mono', monospace;
+  font: 400 0.6875rem/1 var(--font-mono), monospace;
   text-decoration: none;
   transition: color 140ms ease-out, border-color 140ms ease-out;
 }

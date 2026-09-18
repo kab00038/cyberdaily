@@ -256,7 +256,7 @@ export default function DashboardSection() {
             )}
             {threatsStatus === "ready" && (
               <div className="divide-y divide-ui-border">
-                {threats?.kev.slice(0, 5).map((item) => {
+                {threats?.kev?.slice(0, 5).map((item) => {
                   const primaryLine = formatKevPrimaryLine(
                     item.vulnerabilityName,
                     item.vendorProject,

@@ -57,9 +57,14 @@ const config: Config = {
         },
       },
       fontFamily: {
-        mono: ["JetBrains Mono", "monospace"],
-        sans: ["DM Sans", "system-ui", "sans-serif"],
-        display: ["Space Grotesk", "system-ui", "sans-serif"],
+        // Faces are loaded via next/font/google in app/layout.tsx (F19),
+        // which exposes them as CSS variables on <html>. Referencing the
+        // variables here (instead of literal family names) keeps Tailwind's
+        // font-mono / font-sans / font-display utilities in sync with
+        // app/globals.css automatically.
+        mono: ["var(--font-mono)", "monospace"],
+        sans: ["var(--font-body)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
       },
       animation: {
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",

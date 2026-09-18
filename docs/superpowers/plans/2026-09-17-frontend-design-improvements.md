@@ -297,6 +297,50 @@ Original task table follows.
 
 ---
 
+### Wave 4 — ✅ COMPLETE (2026-09-18)
+
+| Finding | Result |
+| --- | --- |
+| F19 next/font | `@import` replaced with self-hosted `next/font/google`, `display: swap`, latin subset. Weights cut 12 → 8 files (dropped 700 everywhere, and 400 for Space Grotesk). Every font-family selector verified resolving in a browser: DM Sans, JetBrains Mono, Space Grotesk — none fell back to system-ui |
+| F16 favicon / OG | `link[rel*=icon]` **2**, `meta[property^="og:"]` **11**, `meta[name^="twitter:"]` **8**, `theme-color` **1**. `/icon` serves SVG, `/apple-icon` and `/opengraph-image` serve PNG, all 200 with `immutable, max-age=31536000` |
+| F18 footer | Exactly **1** `<footer>` on every route, with data attribution and a link to `/sources`. No shell geometry regression |
+| F15 map targets | Hit circles ≥24px behind each marker; visible radii unchanged |
+| F20 source status | Error filled / OK quiet / Partial outlined. Contrast 8.67 : 10.44 : 7.01, distinguishable in grayscale |
+| F17 decorative SVGs | 10 icons marked `aria-hidden` + `focusable="false"` |
+| F22 framer-motion | Removed — zero imports, three packages dropped |
+
+`npm run pages:build` passes, which is the one that matters for Cloudflare.
+
+**Cloudflare needs icon/OG routes, not static files.** Next's static
+`app/icon.svg` convention compiles to an internal Route Handler, and
+`@cloudflare/next-on-pages` rejects any route that does not declare
+`runtime = "edge"` — which a static file cannot. They are therefore small edge
+routes serving pre-baked bytes from `app/_brand/og-assets.ts`, with no
+per-request rendering.
+
+**Tailwind opacity modifiers do not work on `ui-*` tokens.** Those colours are
+plain `var(--cd-*)` values with no alpha channel, so Tailwind 3 cannot build the
+variants: `bg-ui-accent` compiles, `bg-ui-accent/10` produces **nothing**.
+Verified by grepping the compiled bundle. Six usages were inert and now use the
+solid tokens that express the same intent (`--cd-accent-soft` is exactly
+"accent at low opacity over canvas"). **The systemic fix — redefining tokens as
+`rgb(var(--cd-*-rgb) / <alpha-value>)` — is deferred to Wave 7**, where the
+token layer is reworked for WebTUI anyway.
+
+**Correction to Wave 3's measure figure.** Wave 3 recorded 70 characters per
+line. That measurement was taken while this sandbox had Google Fonts blocked,
+so it measured a *fallback* face, not DM Sans. With the real webfont loaded,
+`55ch` renders **81** characters — outside the comfortable band the whole task
+was about. The cap is now **48ch**, measured against the real font at **71**
+characters. Any future measure work must load the real webfont first; this is
+the second time a `ch` value has been wrong for a non-obvious reason.
+
+**Latent bug fixed in passing:** `DashboardSection.tsx` guarded `threats?.kev?.length`
+on one line but `threats?.kev.slice(...)` on another, so a payload without `kev`
+crashed the home page. Found because a test fixture omitted the field.
+
+Original task table follows.
+
 ### Wave 4 — Polish & platform
 
 | # | Task | Files | Fixes |
@@ -451,7 +495,7 @@ Deliverable: before/after screenshots per route, a pass/fail table, and an expli
 | ✅ 2.1 — Chart decision | 1 | **Complete — option (b) chosen** |
 | ✅ 2.2–2.6 — Info design | 3 | **Complete 2026-09-17** |
 | ✅ 3 — Density | 3 | **Complete 2026-09-17** |
-| 4 — Polish (4.2 owns CSS) | 7 | Kyle reviews + commits |
+| ✅ 4 — Polish | 4 + direct | **Complete 2026-09-18** |
 | 5 — Verification | 1 | **Baseline locked** |
 | 6.1 — WebTUI spike | 1 | **Kyle picks type direction + theme, or stops here** |
 | 7 — Foundation | 1 | Zero visual change confirmed |
