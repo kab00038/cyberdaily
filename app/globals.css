@@ -5,6 +5,64 @@
    below references one of those variables instead of a literal family name,
    so this file and tailwind.config.ts both resolve to the same loaded faces. */
 
+/* ---------------------------------------------------------------------
+   WebTUI foundation (Wave 7). Zero visual change is the goal — this wave
+   lands only the layer plumbing, box/border utilities, and a variable
+   mapping. No component stylesheets are imported and no existing element
+   is restyled. Component migration is Wave 8.
+
+   `@layer base, utils, components;` declares the layer order up front so
+   Tailwind's own `@tailwind base/components/utilities` directives (below)
+   interleave correctly with WebTUI's layers instead of appending a fourth,
+   lower-priority layer after `utilities`. `dist/base.css` and
+   `dist/utils/box.css` are the only two files imported — the 20 component
+   stylesheets are deliberately left out (see the note above `:root`).
+
+   The literal `dist/...` subpath is required, not `@webtui/css/base.css`:
+   the package's `package.json` "exports" map (`"./*": "./dist/*"`) isn't
+   understood by postcss-import's resolver, which does a plain filesystem
+   lookup relative to the package root and needs the real path. Bare
+   `@import "@webtui/css/base.css"` fails to resolve.
+   `postcss-import` (postcss.config.mjs) is a new devDependency: without it,
+   Next's css-loader resolves the `@import` as a *separate* webpack module,
+   so when Tailwind's postcss plugin processes base.css/box.css in
+   isolation it errors with "`@layer base` is used but no matching
+   `@tailwind base` directive is present" — it can't see the sibling
+   `@tailwind base;` in this file. postcss-import inlines the imports
+   before Tailwind ever sees them, so everything lands in one document.
+
+   VERIFIED EMPIRICALLY (real browser, computed styles, home route) which
+   stylesheet wins for each of the five base.css hazards, before any
+   remapping below was added:
+
+     - body font-family   → project won (DM Sans) — unlayered `body {}`
+       further down this file beats WebTUI's `@layer base` rule.
+     - body line-height    → project won (1.6 / 25.6px)  — same reason.
+     - body background-color → project won (--cd-canvas) — same reason.
+     - :focus-visible outline → project won (2px solid accent) — same
+       reason; `* { outline: none }` is layered and loses even though
+       `:focus-visible` alone is not a highly specific selector.
+     - word-break → WebTUI WON (`break-all` leaked through). The project
+       never declared `word-break` on `body`/`html` before this wave, so
+       there was no competing *unlayered* declaration for the cascade to
+       prefer — an unlayered rule only beats a layered one for properties
+       it actually sets. Neutralised explicitly below, next to `body`.
+
+   Tailwind 3.4 emits unlayered CSS (preflight and every project rule in
+   this file live outside any `@layer`), and per the CSS Cascade Layers
+   spec, unlayered declarations are treated as an implicit final layer
+   that outranks every named layer regardless of selector specificity or
+   source order. That is *why* four of the five hazards resolved
+   themselves for free. It is not why the fifth did — that one had no
+   unlayered competitor to begin with, which is the actual lesson: the
+   cascade only saves you where you already have an opposing rule for the
+   exact property in question. Anything WebTUI sets that this project
+   never set is a live landmine, not a non-issue. --------------------- */
+
+@layer base, utils, components;
+@import "@webtui/css/dist/base.css";
+@import "@webtui/css/dist/utils/box.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,6 +93,64 @@
   --cd-medium: #f3d278;
   --cd-low: #91c8ff;
   --cd-unknown: #b6c0c9;
+
+  /* -------------------------------------------------------------------
+     WebTUI variable mapping (Wave 7) — THE CONTRACT every later wave
+     depends on. This block is deliberately unlayered (it's a second
+     declaration of the plain `:root` selector, same as the one above) so
+     it always outranks WebTUI's own `@layer base { :root { ... } }`
+     defaults, regardless of import order. Do NOT move this into a
+     `@layer` block, and do NOT adopt WebTUI's own colour values anywhere
+     — every variable below resolves to an existing, contrast-validated
+     `--cd-*` token. The `--cd-*` tokens themselves are NOT altered here.
+
+     Backgrounds (4) — WebTUI numbers 0→3 from "purest background" to
+     "furthest from it" (its own dark theme: #000 → #666, darkest to
+     lightest). That ordering maps directly onto the project's existing
+     surface ramp, which already runs darkest → lightest:
+       --background0 (base/page)      → --cd-canvas   (#0b1110, darkest)
+       --background1 (next surface)   → --cd-sidebar   (#0d1512)
+       --background2 (raised surface) → --cd-surface   (#131d19)
+       --background3 (furthest)       → --cd-raised    (#1a2821, lightest)
+
+     Foregrounds (3) — same logic, brightest text → dimmest text:
+       --foreground0 (primary text)   → --cd-text      (#f0f6f2, brightest)
+       --foreground1 (secondary text) → --cd-secondary (#becbc3)
+       --foreground2 (muted text)     → --cd-muted     (#96aa9e, dimmest)
+
+     Box borders — `--box-border-color` (dist/utils/box.css) defaults to
+     `var(--foreground0)`, which after the mapping above would resolve to
+     `--cd-text` (body text colour) — wrong for a border. Remapped
+     directly to `--cd-border`, the token every other border in this
+     project already uses.
+
+     Type (Wave 6 decision, option B — see the plan's §6 Wave 6 section).
+     WebTUI's own defaults are 16px / monospace / 1.3, which is option A
+     (full terminal) and was explicitly rejected. These three are set to
+     the project's existing prose values so any future WebTUI component
+     that reads `var(--font-family)` / `var(--font-size)` /
+     `var(--line-height)` inherits DM Sans at 16px/1.6, not WebTUI's
+     defaults. `--font-family` references `--font-body` (the next/font
+     variable set on <html> in app/layout.tsx), matching `body`'s own
+     `font-family` declaration below exactly instead of duplicating a
+     literal font stack that could drift out of sync with it. */
+  --background0: var(--cd-canvas);
+  --background1: var(--cd-sidebar);
+  --background2: var(--cd-surface);
+  --background3: var(--cd-raised);
+
+  --foreground0: var(--cd-text);
+  --foreground1: var(--cd-secondary);
+  --foreground2: var(--cd-muted);
+
+  --box-border-color: var(--cd-border);
+
+  --font-family: var(--font-body), system-ui, sans-serif;
+  --font-size: 16px;
+  --line-height: 1.6;
+  /* --font-weight-bold / --font-weight-normal are left at WebTUI's
+     defaults (700 / 400) — nothing in this project conflicts with them
+     and no hazard was identified for either. */
 }
 
 body {
@@ -43,9 +159,31 @@ body {
   color: var(--cd-text);
   font-family: var(--font-body), system-ui, sans-serif;
   line-height: 1.6;
+  /* Neutralises dist/base.css's `body,html { word-break: break-all }`
+     (Wave 7 hazard 4). Every other base.css hazard is beaten for free by
+     the unlayered-always-wins rule (see the comment above :root), because
+     this file already had a competing unlayered declaration for that same
+     property. word-break did not — nothing here set it before this wave —
+     so without this explicit `normal` the cascade has nothing of ours to
+     prefer and WebTUI's `break-all` applies unopposed, breaking words
+     mid-character in every prose surface on the site. */
+  word-break: normal;
+  /* Same hazard again, and the reason this class of leak needs sweeping
+     rather than patching case by case: base.css also sets
+     `font-variant-ligatures: common-ligatures` on body/html, which nothing
+     here opposed either. JetBrains Mono ships programming ligatures, so
+     leaving this on silently rewrites how sequences like -> != == render in
+     every mono surface — CVE identifiers, EPSS values, timestamps, the
+     source readouts. The project never opted into that. */
+  font-variant-ligatures: normal;
 }
 
-html { scroll-padding-top: 5rem; }
+html {
+  scroll-padding-top: 5rem;
+  /* base.css targets both selectors, so both need the same two neutralisers. */
+  word-break: normal;
+  font-variant-ligatures: normal;
+}
 ::selection { background: #285d43; color: #fff; }
 
 .font-mono {

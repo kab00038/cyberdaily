@@ -548,6 +548,85 @@ the news feed.
 
 ---
 
+### Wave 7 — ✅ COMPLETE (2026-09-18) — foundation landed, zero visual change
+
+`@webtui/css@0.1.10` + `postcss-import` are in. Only `dist/base.css` and
+`dist/utils/box.css` are imported; **none of the 20 component stylesheets** —
+those land per surface in Wave 8.
+
+**Pixel-verified identical.** Every route screenshotted before and after with the
+clock frozen, plus a control screenshotting the *same* build twice to prove the
+harness was deterministic:
+
+| Route | control (same build ×2) | before vs after |
+| --- | --- | --- |
+| `/`, `/news`, `/threats`, `/analytics`, `/sources`, `/cve/[id]` | **0%** | **0%** |
+| `/community` | 0.0001% | 0.0038% |
+
+`/community`'s variance appears in the **control too**, which is what identifies
+it: the footer's server-rendered build timestamp rolls a minute between two
+server starts. The changed region was an 8×9px box — one digit glyph. Not CSS.
+
+#### The one lesson worth carrying into Wave 8
+
+`dist/base.css` contains six declarations that would each break something here.
+Four resolved themselves for free, and **two did not** — and the difference
+between those groups is the whole lesson:
+
+| `base.css` declaration | Outcome |
+| --- | --- |
+| `--font-family: monospace` | Project won — unlayered `body{}` beats `@layer base` |
+| `--line-height: 1.3` | Project won — same |
+| `body,html{background-color:var(--background0)}` (→ #fff) | Project won — same |
+| `*{outline:none}` | Project won — unlayered `:focus-visible` beats it. §2 constraint 3 intact |
+| `body,html{word-break:break-all}` | **LEAKED** — neutralised explicitly |
+| `body,html{font-variant-ligatures:common-ligatures}` | **LEAKED** — neutralised explicitly |
+
+Tailwind 3.4 emits **unlayered** CSS, and unlayered declarations outrank every
+named layer regardless of specificity. That is why four hazards died on contact.
+But it only protects properties **the project already sets**. `word-break` and
+`font-variant-ligatures` had no competing declaration, so WebTUI applied
+unopposed. The ligature leak mattered more than it looks: JetBrains Mono ships
+programming ligatures, so it silently rewrote how `->`, `!=` and `==` render in
+every mono surface — CVE IDs, EPSS values, timestamps, source readouts.
+
+**Wave 8 must not assume "unlayered Tailwind protects us."** Every WebTUI
+component property this project does not already declare is a live landmine.
+Diff computed styles before and after importing each component stylesheet.
+
+#### Other findings Wave 8 needs
+
+- **`postcss-import` is required, not optional.** Without it Next's css-loader
+  resolves the `@import` as a separate webpack module, and Tailwind's plugin
+  then errors on `base.css` in isolation with "`@layer base` is used but no
+  matching `@tailwind base` directive is present". It must run **before**
+  `tailwindcss` in `postcss.config.mjs`. Not documented by WebTUI.
+- **Use the literal `dist/` path.** `@import "@webtui/css/base.css"` fails —
+  postcss-import's resolver does not honour the package's `exports` map. Use
+  `@webtui/css/dist/base.css`.
+- **`box.css` draws its border on an absolutely-positioned `:before` at
+  `z-index:-1`**, with `padding: 1lh 1ch` on the box. `1ch`/`1lh` resolve against
+  the *box's own font*, so character-grid padding only aligns where the box's
+  font context is mono. Under option B a box wrapping prose inherits DM Sans.
+  Decide per surface in Wave 8.
+- `--box-border-color` defaults to `var(--foreground0)` — remapped to
+  `--cd-border`, or every box border would render in body-text colour.
+- **Lockfile care:** `pages:build` rewrites `package-lock.json` as a side effect.
+  Revert *that* churn, but do not blanket-revert the file or the real dependency
+  additions go with it.
+
+**Variable mapping (the contract):** `--background0..3` → `--cd-canvas`,
+`--cd-sidebar`, `--cd-surface`, `--cd-raised`; `--foreground0..2` → `--cd-text`,
+`--cd-secondary`, `--cd-muted`; `--box-border-color` → `--cd-border`;
+`--font-family`/`--font-size`/`--line-height` → the project's DM Sans / 16px /
+1.6, explicitly **not** WebTUI's monospace / 16px / 1.3. `data-webtui-theme="dark"`
+is set on `<html>`. The `--cd-*` tokens themselves are untouched.
+
+CSS bundle +2.9 KB (+8.8%). No JS added. 117 tests, lint, build and
+`pages:build` all pass.
+
+Original brief follows.
+
 ### Wave 7 — Foundation *(sequential — one agent, single owner of `globals.css`)*
 
 **7.1 — Land the WebTUI foundation.** No component migration yet; the site should look essentially unchanged when this ships.
@@ -616,7 +695,7 @@ Deliverable: before/after screenshots per route, a pass/fail table, and an expli
 | ✅ 4 — Polish | 4 + direct | **Complete 2026-09-18** |
 | ✅ 5 — Verification | 3 | **Complete 2026-09-18 — baseline locked** |
 | ✅ 6 — Type decision | 0 (decided from measurement) | **Complete — option B chosen** |
-| 7 — Foundation | 1 | Zero visual change confirmed |
+| ✅ 7 — Foundation | 1 | **Complete 2026-09-18 — pixel-identical** |
 | 8 — Components (8.0 owns CSS) | 6 | Kyle reviews + commits |
 | 9 — Charts & map | 3 | Kyle reviews + commits |
 | 10 — Final verification | 1 | Ship |

@@ -84,6 +84,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${spaceGrotesk.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
+      data-webtui-theme="dark"
     >
       <body className="min-h-screen bg-ui-canvas">{children}</body>
     </html>
