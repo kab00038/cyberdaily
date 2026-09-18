@@ -126,7 +126,10 @@ export default function CveDetailClient({ id }: { id: string }) {
             />
           </div>
 
-          {data.cve !== null ? (
+          {/* `!= null` on purpose: a malformed 200 omits the key entirely,
+              and `undefined !== null` would take the found branch and pass
+              undefined into calculateRiskScore(). */}
+          {data.cve != null ? (
             <CveDetails
               cve={calculateRiskScore(
                 data.cve,

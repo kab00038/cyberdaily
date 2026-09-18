@@ -355,6 +355,68 @@ Original task table follows.
 
 ---
 
+### Wave 5 — ✅ COMPLETE (2026-09-18) — baseline locked
+
+Three independent agents, none of which did any implementation work.
+
+**All 22 findings re-measured: F1–F22 PASS.** Notable exact matches with zero
+drift: contrast on the `/sources` pills at **8.67 / 10.44 / 7.01**, line measure
+at **71** characters on all three prose surfaces, CVE cards at **139px**, map hit
+targets at **26×26px**, sort-toggle states differing in four properties.
+
+**Contrast sweep: zero WCAG AA failures across all seven routes.** This is the
+project's best property and it survived four waves of change, including the new
+coloured states (sort chips, filled error pills, chart bars, footer).
+
+Regression sweep clean: 35 route × width cells with no horizontal overflow and
+no page errors. Reduced motion genuinely takes effect — 383+ elements checked
+per route, the map pulse collapses to 0.001ms. Skip link, expand control, and
+drawer focus-restore all pass.
+
+Bundle flat versus the pre-`next/font` baseline, correctly: Wave 2's recharts win
+predates that commit, and Wave 4 changes how fonts load, not JS. The measurable
+Wave 4 win is structural — the baseline's compiled CSS opens with a
+render-blocking cross-origin `@import`; the current CSS has **8 same-origin
+`@font-face` rules and zero external origins**. Fonts: 8 self-hosted woff2,
+131 KiB, immutable. CLS 0.005 on `/` and 0.044 on `/news`, both well inside the
+good band.
+
+#### Verification found five defects. Four are fixed; one is outstanding.
+
+The valuable part of this wave was not the green ticks — it was that probing
+**malformed 200 responses** (rather than only error statuses) surfaced a whole
+class of bug: code that assumes a fetch either succeeded in the expected shape
+or threw, with no defence in between.
+
+| # | Defect | Status |
+| --- | --- | --- |
+| 1 | `SourceHealthIndicator` had no `res.ok` check, so a 500 from `/api/sources` produced an empty list, no source read as "error", and the widget reported **"All sources operational"** during an outage of the health endpoint itself | **Fixed** |
+| 2 | `ThreatForecast` likewise, plus `useState<Completeness>("complete")` as an optimistic initial value — so a failed first load asserted a **complete NVD result set** having loaded nothing. Initial state is now `"unknown"`, and a failed first load says so | **Fixed** |
+| 3 | `TrendAnalytics` optional-chained `attackVectors` and `severityBreakdown` but not `epssDistribution`, `vendorMentions` or `topCWEs` — any 200 missing one took down the whole `/analytics` page. Four sites guarded (three `.map()`, one `.length` render guard) | **Fixed** |
+| 4 | `CveDetailClient` gated on `data.cve !== null`, but the real failure mode is an **absent key**, and `undefined !== null` is true — so it took the found branch and passed `undefined` into `calculateRiskScore()` | **Fixed** |
+| 5 | `MobileNavDrawer` forward focus wrap leaks one step: tabbing past the last nav link lands on `<body>` before self-correcting to the Close button on the next press. Reverse (Shift+Tab) wraps correctly. Repro: open the drawer at 375px, Tab 7 times from Close | **Outstanding** |
+
+Defects 1 and 2 mattered most because they contradicted documented guarantees.
+The README states the health indicator is *"derived from real source probes, not
+a decorative 'Operational' badge"* — which was false in exactly the case that
+matters. Both fixes were verified by reproducing the original failure and
+confirming it no longer occurs, not by inspection.
+
+**Environment limits, stated rather than papered over.** Google Fonts is
+egress-blocked here, so builds use Next's documented `NEXT_FONT_GOOGLE_MOCKED_RESPONSES`
+hook with real font files from npm. A head-to-head LCP comparison against the
+pre-`next/font` baseline would be meaningless — that tree's font fetch fails in
+~250ms rather than costing real network time — so none was reported. The world
+map's base geography (cdn.jsdelivr.net) also cannot load here; markers and the
+country list render correctly regardless. `/sources` cannot show a live "OK"
+state without egress, so its grayscale check covered Error and Partial only.
+
+**Waves 1–5 are complete and the baseline is locked.** `recharts` remains in
+`package.json` with one dead importer, `components/ThreatSurface.tsx` — a Wave 9
+decision, unchanged.
+
+Original checklist follows.
+
 ### Wave 5 — Verification
 
 **One agent with fresh eyes** — not any agent that did implementation work.
@@ -496,7 +558,7 @@ Deliverable: before/after screenshots per route, a pass/fail table, and an expli
 | ✅ 2.2–2.6 — Info design | 3 | **Complete 2026-09-17** |
 | ✅ 3 — Density | 3 | **Complete 2026-09-17** |
 | ✅ 4 — Polish | 4 + direct | **Complete 2026-09-18** |
-| 5 — Verification | 1 | **Baseline locked** |
+| ✅ 5 — Verification | 3 | **Complete 2026-09-18 — baseline locked** |
 | 6.1 — WebTUI spike | 1 | **Kyle picks type direction + theme, or stops here** |
 | 7 — Foundation | 1 | Zero visual change confirmed |
 | 8 — Components (8.0 owns CSS) | 6 | Kyle reviews + commits |

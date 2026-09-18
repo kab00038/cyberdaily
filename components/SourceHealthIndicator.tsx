@@ -54,6 +54,12 @@ export default function SourceHealthIndicator({
     async function check() {
       try {
         const res = await fetch("/api/sources");
+        // A non-2xx response carries an error body, not a source list. Without
+        // this check `data.sources ?? []` yields an empty array, no source is
+        // "error", and the widget cheerfully reports "All sources operational"
+        // while the health endpoint itself is down — the exact decorative
+        // badge the README promises this is not.
+        if (!res.ok) throw new Error(`/api/sources responded ${res.status}`);
         const data: SourcesPayload = await res.json();
         if (cancelled) return;
         const sources = data.sources ?? [];

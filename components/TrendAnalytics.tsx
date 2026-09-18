@@ -114,21 +114,21 @@ export default function TrendAnalytics() {
   }));
   const attackVectorTotal = attackVectorRows.reduce((sum, r) => sum + r.count, 0);
 
-  const epssRows = data.epssDistribution.map((bucket) => ({
+  const epssRows = (data.epssDistribution ?? []).map((bucket) => ({
     id: bucket.range,
     label: bucket.range,
     count: bucket.count,
   }));
   const epssTotal = epssRows.reduce((sum, r) => sum + r.count, 0);
 
-  const vendorRows = data.vendorMentions.map((v) => ({
+  const vendorRows = (data.vendorMentions ?? []).map((v) => ({
     id: v.vendor,
     label: v.vendor,
     count: v.count,
   }));
   const vendorTotal = vendorRows.reduce((sum, r) => sum + r.count, 0);
 
-  const cweRows = data.topCWEs.map((c) => {
+  const cweRows = (data.topCWEs ?? []).map((c) => {
     const name = getCweName(c.cwe);
     // getCweName() falls back to the bare ID verbatim when unmapped — don't
     // print the same string twice in that case.
@@ -270,7 +270,7 @@ export default function TrendAnalytics() {
           </div>
 
           {/* Top CWEs - full width, stacked layout for the longer names */}
-          {data.topCWEs.length > 0 && (
+          {(data.topCWEs?.length ?? 0) > 0 && (
             <div className="panel rounded-lg p-4">
               <h2 className="text-sm font-semibold text-ui-secondary mb-1">
                 Top weakness types (CWE)

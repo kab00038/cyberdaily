@@ -67,7 +67,10 @@ function coverageStatement(
 export default function ThreatForecast() {
   const [cves, setCves] = useState<RiskScoredCVE[]>([]);
   const [kevCatalog, setKevCatalog] = useState<KEVItem[]>([]);
-  const [completeness, setCompleteness] = useState<Completeness>("complete");
+  // Starts "unknown", not "complete": until a fetch actually succeeds nothing
+  // has established the result set's coverage, and an optimistic default turns
+  // a failed first load into a false claim of completeness.
+  const [completeness, setCompleteness] = useState<Completeness>("unknown");
   const [nvdError, setNvdError] = useState<string | null>(null);
   const [kevKnown, setKevKnown] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -88,6 +91,10 @@ export default function ThreatForecast() {
       controller = new AbortController();
       try {
         const res = await fetch("/api/threats", { signal: controller.signal });
+        // Without this, a non-2xx error body falls through to the defaults
+        // below and the toolbar reports "0 CVEs loaded — NVD result set is
+        // complete" during an outright fetch failure.
+        if (!res.ok) throw new Error(`/api/threats responded ${res.status}`);
         const data = await res.json();
         if (controller.signal.aborted) return;
         setCves(data.cves || []);
@@ -100,7 +107,15 @@ export default function ThreatForecast() {
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
         console.error("Failed to fetch threats:", error);
-        // Preserve previously loaded CVEs on a refresh failure.
+        // Preserve previously loaded CVEs on a refresh failure, but if nothing
+        // has loaded yet say so plainly instead of leaving the reader with an
+        // empty table and no explanation.
+        setCves((current) => {
+          if (current.length === 0) {
+            setNvdError("The vulnerability feed could not be reached.");
+          }
+          return current;
+        });
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
