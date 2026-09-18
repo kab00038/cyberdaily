@@ -33,7 +33,7 @@ Constraints for every agent working from this plan. **These survive the WebTUI m
 2. **Keep the honesty copy.** Partial-data warnings and sampling disclaimers stay. Some get consolidated (F7) — none get deleted.
 3. **Preserve the a11y work**: single `h1`, heading order, `aria-sort`, `aria-pressed`, `sr-only` captions, focus styles, 44px targets, reduced-motion block.
 4. **`app/globals.css` is a shared file.** Parallel agents editing it will conflict. All CSS changes are consolidated into single-owner tasks — respect the ownership column.
-5. Until Wave 6, **no new visual direction** — no ASCII borders, no theme swaps, no monospace-everywhere. Waves 1–5 fix what exists.
+5. Waves 1–5 fix what exists; **the new visual direction starts at Wave 7**. Wave 6 settled the type question (option B — terminal chrome, sans prose), so ASCII borders and WebTUI components are in scope from Wave 7 onward, but **monospace-everywhere and theme swaps are not** — see Wave 6.
 
 ---
 
@@ -448,7 +448,9 @@ The current design already has TUI DNA. `.eyebrow` is letter-spaced uppercase Je
 **Risk 1 — Monospace prose. This is the big one.**
 WebTUI defaults `--font-family: monospace` and `--line-height: 1.3`. CyberDaily is a *reading* site: 125 news stories with deks, CVE descriptions running full paragraphs. Monospace is ~15–20% wider per character and measurably slower for continuous prose, and 1.3 line-height is cramped for anything longer than a label. Stack that on the existing 116-character measure (F6) and reading the news feed becomes genuinely unpleasant.
 
-**Recommendation: go hybrid.** Monospace for chrome, data, labels, IDs, metrics, status, table cells — everything that's already mono plus the new TUI furniture. **Keep DM Sans for prose** — deks, descriptions, summaries. This is what good TUI-*inspired* web design looks like, versus a literal terminal emulator. If you want to try full-mono, the spike (6.1) is where to find out, not production.
+**Recommendation: go hybrid — and this is now the settled decision, see Wave 6 below.** Monospace for chrome, data, labels, IDs, metrics, status, table cells. **Keep DM Sans for prose.** This is what good TUI-*inspired* web design looks like, versus a literal terminal emulator.
+
+**A correction to the framing above.** This section originally described the middle option as "hybrid, letting prose fill its box like a terminal would," treating a measure cap as the *less* authentic choice. That is backwards. **A terminal is 80 columns.** The TUI aesthetic *is* a measure cap; unbounded line length is a web habit, not a terminal one. Measured, DM Sans uncapped in this layout runs **178 characters at 1440px and 215 at 1920px** — worse than the 116 that produced finding F6 in the first place.
 
 **Risk 2 — Your contrast advantage.**
 Zero AA failures is the best property this site has, and it's the easiest thing to lose here. WebTUI's default ramp is 4 backgrounds + 3 foregrounds of essentially grayscale; the community themes (Gruvbox, Nord, Catppuccin) are tuned for terminals at 14–18px, not for 11px metadata on a web page. Several of their muted foregrounds will fail at your small sizes.
@@ -475,20 +477,74 @@ WebTUI styles DOM components. Recharts SVG output and the `react-simple-maps` wo
 
 ---
 
-### Wave 6 — Spike and decide *(one agent, no merge to main)*
+### Wave 6 — ✅ DECIDED (2026-09-18) — no spike needed
 
-**6.1 — WebTUI proof-of-concept on `/sources`.** Branch only, not merged.
+The spike was cancelled. Its only purpose was to choose a type direction from
+screenshots, and that choice was made from measurement instead, which is both
+cheaper and more decisive than looking at three renders.
 
-Deliverables:
+**Measured font metrics (real webfonts loaded, `/news` at 1440px):**
 
-1. Install `@webtui/css`, wire the `@layer base, utils, components` order, and **verify it composes with Tailwind 3.4's injection order.** Document what you find.
-2. Rebuild `/sources` using WebTUI box utilities and components, with all WebTUI color variables mapped to the existing `--cd-*` tokens. **Do not adopt WebTUI's default palette.**
-3. Produce **three variants of the `/news` feed** for a type decision: (a) full monospace at WebTUI defaults, (b) hybrid — mono chrome, DM Sans prose, (c) hybrid with measure capped at 68ch. Screenshot all three at 1440 and 375.
-4. Run the contrast sweep on every variant. Report every pair that fails AA.
-5. Report bundle-size delta and which component stylesheets are actually needed.
-6. Flag anything in §2's constraints that WebTUI makes difficult.
+| | Value |
+| --- | --- |
+| DM Sans, average character | 6.39px at 14px |
+| JetBrains Mono, advance | 8.41px at 14px · 9.61px at 16px · 10.81px at 18px |
+| **Mono vs sans width ratio** | **1.315×** |
+| Prose column, capped | 460px → **72 characters** |
+| Prose column, uncapped | 1136px at 1440 → **178 characters**; 1376px at 1920 → **215** |
 
-**Kyle decides from the screenshots: type direction, theme, and whether to proceed.** Nothing merges from this wave.
+**The three options, and what the numbers said:**
+
+- **A — Full terminal.** Mono everywhere at WebTUI's 18px / 1.3. In mono, CSS
+  `ch` *is* the character width, so today's `48ch` becomes literally 48
+  characters — choppy, down from 72. Re-deriving to ~70ch grows the prose column
+  from 460px to **757px (+65%)**. That fits `/news` but **breaks the home page's
+  right-hand KEV column** (~370px → 34 characters), forcing a re-layout of the
+  briefing grid. Upside: font payload would fall from 3 families / 8 files /
+  131 KiB to roughly 3 files and ~50 KiB.
+- **B — Terminal chrome, sans prose. ← CHOSEN.** Mono for everything structural;
+  DM Sans for deks and descriptions at the existing 72-character measure.
+- **C — Split by surface.** `/threats`, `/analytics`, `/sources` full terminal;
+  `/news` and `/community` hybrid. Most visually committed without wrecking the
+  reading pages, but two type systems to maintain and a visible seam when
+  navigating between them — the site would read as two designs.
+
+**Why B.** Not only for safety. The thing that will actually make CyberDaily look
+like a TUI is the box-drawing, the borders, the status chrome and character-grid
+alignment — **not the body face**. Mono already does the data work here. And B is
+not a type migration at all: the three-face split that Wave 4 locked in *is*
+option B, so WebTUI adds a box/border/component layer on top of a type contract
+that does not move. It is the only option where the 48ch cap, the 71-character
+measure, the card density and the contrast record all need no re-derivation —
+Waves 3–5 survive intact.
+
+**Consequences for the waves below:**
+
+1. **No type changes.** `--font-family`, `--font-size` and `--line-height` are
+   NOT taken from WebTUI's defaults (18px / monospace / 1.3). The existing
+   16px / DM Sans / 1.6 for prose stays, as does `.prose-measure` at 48ch.
+   Wave 7 must set WebTUI's font variables to the existing faces, not inherit.
+2. **`.prose-measure` is load-bearing and stays.** See its comment in
+   `globals.css` — it has been wrong twice for non-obvious reasons.
+3. **Wave 8 gains a layout option instead of a type one.** If B does not feel
+   "terminal" enough once the boxes land, the next lever is *not* the body face —
+   it is tightening panel widths to multiples of the mono advance so the layout
+   sits on a real character grid. Cheap once the boxes are in; decide after
+   seeing Wave 8.
+
+**Still unverified and must be checked first in Wave 7:** Tailwind 3.4 does not
+emit native `@layer` the way Tailwind 4 does, so WebTUI's required
+`@layer base, utils, components` ordering needs checking against Tailwind's
+injection order. WebTUI's docs carry no Tailwind interop guidance. Likely fine;
+confirm before building on it.
+
+**Also still true from the risk list above:** do not adopt WebTUI's colour
+defaults (map them onto the validated `--cd-*` tokens), keep the severity ramp,
+and expect the charts and map to need their own pass in Wave 9.
+
+**Pilot on `/sources` first** — the most terminal-native content on the site,
+self-contained, and the lowest-risk place to prove the approach before touching
+the news feed.
 
 ---
 
@@ -496,10 +552,10 @@ Deliverables:
 
 **7.1 — Land the WebTUI foundation.** No component migration yet; the site should look essentially unchanged when this ships.
 
-- Add the dependency and layer declarations, in the order verified in 6.1.
-- Import only the component stylesheets 6.1 identified as needed.
+- Add the dependency and layer declarations. **Verify the `@layer base, utils, components` order composes with Tailwind 3.4's injection order before building on it** — this was going to be checked in the cancelled spike, so it is unverified and belongs here, first.
+- Import only the component stylesheets actually needed — start from box/border utilities plus the components `/sources` requires, and add more only when a surface needs them.
 - **Map WebTUI variables to `--cd-*` tokens** in `:root`. This mapping is the contract every later wave depends on — comment it thoroughly.
-- Set `--font-size`, `--font-family`, `--line-height` per the 6.1 type decision (note WebTUI defaults to 18px/monospace/1.3; your current base is 16px/DM Sans/1.6 — reconcile deliberately, don't inherit by accident).
+- **Set `--font-size`, `--font-family` and `--line-height` explicitly to the existing faces — do NOT inherit WebTUI's 18px / monospace / 1.3.** Option B keeps 16px / DM Sans / 1.6 for prose and the existing mono for data. Inheriting the defaults here is the single easiest way to accidentally ship option A.
 - Wire `data-webtui-theme` on `<html>`, consistent with the existing `color-scheme: dark`.
 - **Ship with zero visual change**, or document every intentional difference.
 
@@ -559,7 +615,7 @@ Deliverable: before/after screenshots per route, a pass/fail table, and an expli
 | ✅ 3 — Density | 3 | **Complete 2026-09-17** |
 | ✅ 4 — Polish | 4 + direct | **Complete 2026-09-18** |
 | ✅ 5 — Verification | 3 | **Complete 2026-09-18 — baseline locked** |
-| 6.1 — WebTUI spike | 1 | **Kyle picks type direction + theme, or stops here** |
+| ✅ 6 — Type decision | 0 (decided from measurement) | **Complete — option B chosen** |
 | 7 — Foundation | 1 | Zero visual change confirmed |
 | 8 — Components (8.0 owns CSS) | 6 | Kyle reviews + commits |
 | 9 — Charts & map | 3 | Kyle reviews + commits |
