@@ -46,11 +46,48 @@ function countryName(code: string): string {
 const OTHER = "__other__";
 const TOP_N = 5;
 
+// WCAG 2.2 AA (2.5.8) wants a >=24px minimum pointer target. The visible
+// marker radius encodes sampled-record magnitude and stays untouched (it's
+// 9-18px for small/large samples on the live site) — this is the minimum
+// radius, in real CSS pixels, of an invisible hit circle drawn behind it.
+// A couple of px of margin over the bare 12px (24px diameter) minimum
+// absorbs sub-pixel rounding in the projection math.
+const MIN_HIT_RADIUS_PX = 13;
+
+// ComposableMap defaults to an 800x600 viewBox (react-simple-maps'
+// `ComposableMap` default `width`/`height`), rendered with the SVG default
+// `preserveAspectRatio="xMidYMid meet"`, which uniformly scales by the
+// *smaller* of the two axis ratios. Mirroring that here converts a target
+// CSS pixel size into SVG user units that track the actual rendered scale
+// of the responsive `.map-frame` container, instead of a fixed SVG-unit
+// radius that would drift smaller or larger as the container resizes.
+function svgScaleFor(width: number, height: number): number {
+  if (width <= 0 || height <= 0) return 1;
+  return Math.min(width / 800, height / 600);
+}
+
 export default function ThreatMap() {
   const [threats, setThreats] = useState<ThreatMapEntry[]>([]);
   const [hovered, setHovered] = useState<CountryCluster | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+  const [focusedCountry, setFocusedCountry] = useState<string | null>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const mapAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = mapAreaRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setContainerSize({ width, height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const svgScale = svgScaleFor(containerSize.width, containerSize.height);
 
   useEffect(() => {
     // A fresh controller per fetch cycle so the cleanup abort never kills an
@@ -234,9 +271,13 @@ export default function ThreatMap() {
 
             {clusters.map((cluster) => {
               const isSelected = selectedCountry === cluster.country;
+              const isFocused = focusedCountry === cluster.country;
               const scale = isSelected ? 1.5 : 1;
               const baseRadius = Math.sqrt(cluster.count / maxCount) * 10 + 4;
               const radius = baseRadius * scale;
+              // Never smaller than the visible marker (plus a little
+              // breathing room), never smaller than the 24px AA minimum.
+              const hitRadius = Math.max(radius + 2, MIN_HIT_RADIUS_PX / svgScale);
               const label = `${countryName(cluster.country)}, ${plural(cluster.count, "sampled record")}`;
               return (
                 <Marker
@@ -248,8 +289,23 @@ export default function ThreatMap() {
                   aria-pressed={isSelected}
                   onMouseEnter={() => setHovered(cluster)}
                   onMouseLeave={() => setHovered(null)}
-                  onFocus={() => setHovered(cluster)}
-                  onBlur={() => setHovered(null)}
+                  onFocus={(e) => {
+                    setHovered(cluster);
+                    // Only show the manual focus ring for keyboard focus,
+                    // matching native :focus-visible semantics — a mouse
+                    // click already gets a selection indicator via
+                    // isSelected/the pulse ring, so mirroring that on click
+                    // as well would be a redundant, distracting flash.
+                    const target = e.target as Element;
+                    const isKeyboardFocus =
+                      typeof target.matches === "function" &&
+                      target.matches(":focus-visible");
+                    setFocusedCountry(isKeyboardFocus ? cluster.country : null);
+                  }}
+                  onBlur={() => {
+                    setHovered(null);
+                    setFocusedCountry(null);
+                  }}
                   onClick={() => selectCountry(cluster.country)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -258,6 +314,18 @@ export default function ThreatMap() {
                     }
                   }}
                 >
+                  {/* Invisible hit target: WCAG 2.2 AA (2.5.8) wants a
+                      >=24px minimum pointer target; the visible marker
+                      alone is 9-18px (radius encodes sampled-record
+                      magnitude and stays unchanged). `pointer-events: all`
+                      makes this clickable regardless of paint/fill, the
+                      standard technique for an invisible SVG hit area. */}
+                  <circle
+                    r={hitRadius}
+                    fill="transparent"
+                    pointerEvents="all"
+                    aria-hidden="true"
+                  />
                   <circle
                     r={radius}
                     fill="none"
@@ -280,6 +348,22 @@ export default function ThreatMap() {
                       stroke="var(--cd-accent)"
                       strokeWidth={2}
                       className="map-pulse"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isFocused && (
+                    // Explicit, JS-driven focus ring rather than relying
+                    // solely on the global :focus-visible outline — outline
+                    // support on SVG grouping elements (the <g> react-simple-
+                    // maps renders for Marker) is inconsistent, and this
+                    // guarantees a visible indicator against the map's dark
+                    // fill regardless. Sits outside the hit circle so it's
+                    // never smaller than the >=24px target it's marking.
+                    <circle
+                      r={hitRadius + 3}
+                      fill="none"
+                      stroke="var(--cd-accent)"
+                      strokeWidth={2.5}
                       aria-hidden="true"
                     />
                   )}

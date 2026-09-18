@@ -24,6 +24,11 @@ interface HealthInfo {
   lastChecked: string | null;
 }
 
+// A single status dot doesn't have the "wall of green" problem the /sources
+// pills do (there's only ever one, so it can't swamp anything), so it keeps
+// its traffic-light hues (`--cd-accent` / `--cd-medium` / `--cd-critical`),
+// already distinguishable by lightness as well as hue. Its accessible name
+// (below) is what carries the state on mobile, where the text label hides.
 const DOT_CLASSES: Record<HealthState, string> = {
   loading: "bg-ui-muted",
   ok: "bg-ui-accent",

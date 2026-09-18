@@ -46,10 +46,20 @@ const SECTIONS: {
   },
 ];
 
+// Emphasis is inverted from a plain traffic light: Error — the only state a
+// reader urgently needs to find — carries the filled, high-contrast
+// treatment. OK is quiet (muted text, no fill): healthy is the expected
+// case and shouldn't compete for attention. Partial sits between the two —
+// a real third state (e.g. a missing API key), visible but not alarming.
+// `--cd-critical` (#ff8e94) is designed as a *foreground* on this site's dark
+// surfaces, so using it as a fill here means the text on top must be dark —
+// `text-ui-canvas` measures 8.67:1 against it, well past the 4.5:1 AA floor.
+// Fill/border presence (not just hue) also carries the distinction, so the
+// three states stay legible in grayscale and don't rely on color alone.
 const STATUS_STYLES: Record<SourceStatus["status"], string> = {
-  ok: "border-ui-control-border bg-ui-accent-soft text-ui-accent",
-  partial: "border-ui-border bg-ui-raised text-ui-medium",
-  error: "border-ui-border bg-ui-raised text-ui-critical",
+  error: "border-ui-critical bg-ui-critical text-ui-canvas font-semibold",
+  partial: "border-ui-medium bg-ui-raised text-ui-medium font-medium",
+  ok: "border-transparent bg-transparent text-ui-muted font-normal",
 };
 
 const STATUS_LABELS: Record<SourceStatus["status"], string> = {
@@ -58,10 +68,28 @@ const STATUS_LABELS: Record<SourceStatus["status"], string> = {
   error: "Error",
 };
 
+// Message color follows the same status, rather than always reading as
+// critical red — a Partial source's message (e.g. "GROQ_API_KEY not
+// configured") shouldn't look as alarming as an Error's.
+const MESSAGE_STYLES: Record<SourceStatus["status"], string> = {
+  error: "text-ui-critical",
+  partial: "text-ui-medium",
+  ok: "text-ui-muted",
+};
+
+// Failing sources sort to the top of their section so they're found without
+// scanning a wall of "OK" rows. This is stated once, in the page intro
+// below, rather than silently reordering the list.
+const STATUS_RANK: Record<SourceStatus["status"], number> = {
+  error: 0,
+  partial: 1,
+  ok: 2,
+};
+
 function StatusBadge({ status }: { status: SourceStatus["status"] }) {
   return (
     <span
-      className={`inline-block rounded border px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[status]}`}
+      className={`inline-block rounded border px-2 py-0.5 text-[11px] tracking-wide ${STATUS_STYLES[status]}`}
     >
       {STATUS_LABELS[status]}
     </span>
@@ -89,13 +117,19 @@ export default async function SourcesPage() {
           CyberDaily is a daily cybersecurity briefing. Sources are fetched at
           the cadences listed below. The current view may be using an older
           cached snapshot — see the timestamp on each source for when it was
-          last successfully fetched.
+          last successfully fetched. Within each category, sources with
+          Error or Partial status are listed first so a failure never has to
+          be scanned for.
         </div>
 
         {SECTIONS.map((section) => {
           const entries = SOURCE_CATALOG.filter(
             (entry) => entry.category === section.category
-          );
+          ).slice().sort((a, b) => {
+            const rankA = STATUS_RANK[statusById.get(a.id)?.status ?? "error"];
+            const rankB = STATUS_RANK[statusById.get(b.id)?.status ?? "error"];
+            return rankA - rankB;
+          });
           if (entries.length === 0) return null;
 
           return (
@@ -157,7 +191,11 @@ export default async function SourcesPage() {
                           </p>
                         )}
                         {status?.message && (
-                          <p className="mt-1 max-w-[32ch] text-[11px] leading-relaxed text-ui-critical">
+                          <p
+                            className={`mt-1 max-w-[32ch] text-[11px] leading-relaxed ${
+                              MESSAGE_STYLES[status?.status ?? "error"]
+                            }`}
+                          >
                             {status.message}
                           </p>
                         )}
