@@ -248,6 +248,44 @@ Then in parallel:
 
 ---
 
+### Wave 3 — ✅ COMPLETE (2026-09-17)
+
+| Finding | Result |
+| --- | --- |
+| F6 measure | **70 actual characters per line** on all three prose surfaces (news dek, home dek, CVE required-action), down from 116 |
+| F8 card density | A/B at identical 1024px width: **250px → 139px per card** (−44%), **3.6 → 6.5 cards** per 900px screen |
+| F9 breakpoint | 61rem → **54rem**. Table now renders from ~1180px viewport (was ~1248px); no horizontal overflow at 375/768/1024/1180/1280/1366/1440/1512/1920 |
+| F21 duplicate affordance | "Details" link removed — **0** remaining. Whole card is a click target via a delegated handler that bails on `closest("a, button")`, so **0** nested interactive elements and inner links keep native behaviour |
+| F13 CVE detail | Required action moved out of a ~200px column to full width at **70 chars/line**; dates in a compact row. Copy button now reads "Copy ID" with `aria-label="Copy CVE ID to clipboard"` |
+
+Keyboard verified in a real browser: the expand control is a `<button>`, Tab
+reaches it, Enter and Space both toggle, `aria-expanded` flips. Lint clean, 117
+tests passing, build green, no page errors, no mobile overflow on any route.
+
+**The `ch` unit trap — read before touching `.prose-measure`.** The two agents
+in this wave independently chose **68ch** and **45ch** for the same job, and
+neither was right. CSS `ch` is the width of the "0" glyph, which in DM Sans
+measures 0.637em, while an average character in running English text measures
+0.499em. A `ch` cap therefore renders **~1.27x more characters than its number
+suggests**: `68ch` was measured at **87** characters per line, well past the
+45–75 band. The settled value is **55ch ≈ 70 characters**, applied through one
+shared utility so every prose surface matches. Re-measure before changing it;
+do not "correct" it back upward.
+
+**Process lessons.**
+1. **Commit before spawning worktree agents.** Worktrees branch from the last
+   *commit*, not the working tree. Wave 3B was briefed that the CSS had landed,
+   but its worktree predated the merge, so it never saw `.prose-measure` or the
+   new breakpoint and had to work around both. It flagged this clearly, which is
+   the only reason it was caught cheaply.
+2. **Compare like with like.** Card height was first read as "139px vs a 135px
+   baseline" — no improvement — because the 135px figure came from a different
+   viewport in the original review. Rebuilding `origin/master` and measuring
+   both at 1024px showed the real result: 250px → 139px. A density claim is
+   meaningless without a same-width A/B.
+
+Original task table follows.
+
 ### Wave 3 — Reading comfort & density
 
 | # | Task | Files | Fixes |
@@ -412,7 +450,7 @@ Deliverable: before/after screenshots per route, a pass/fail table, and an expli
 | ✅ 1 — Correctness | 5 | **Complete 2026-09-17** |
 | ✅ 2.1 — Chart decision | 1 | **Complete — option (b) chosen** |
 | ✅ 2.2–2.6 — Info design | 3 | **Complete 2026-09-17** |
-| 3 — Density (3.1 owns CSS) | 4 | Kyle reviews + commits |
+| ✅ 3 — Density | 3 | **Complete 2026-09-17** |
 | 4 — Polish (4.2 owns CSS) | 7 | Kyle reviews + commits |
 | 5 — Verification | 1 | **Baseline locked** |
 | 6.1 — WebTUI spike | 1 | **Kyle picks type direction + theme, or stops here** |

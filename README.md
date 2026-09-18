@@ -161,9 +161,34 @@ of that document lists constraints that must survive every wave.
   sink rather than sorting as "now", and a null engagement count sorts below a
   real zero.
 
-Waves 3–5 cover reading density and platform polish. Waves 6–10 migrate the
-visual system to WebTUI for a terminal-UI aesthetic, keeping the reading
-typeface, the validated palette, and the severity ramp.
+**Wave 3 — reading comfort and density (complete).**
+
+- Running prose was rendering about 116 characters per line. A shared
+  `.prose-measure` utility now caps story deks, CVE summaries, and the CISA
+  required-action text at 70 characters. Note that the cap is `55ch`, not the
+  `68ch` the arithmetic suggests: CSS `ch` is the width of the "0" glyph, which
+  in DM Sans is 0.637em while an average character is 0.499em, so a `ch` cap
+  renders roughly 1.27x more characters than its number implies. Re-measure
+  before changing it.
+- The vulnerability card view was about 250px per card. Collapsing dead vertical
+  space and putting EPSS, exploitation, and published date on one wrapping line
+  brings it to 139px, from 3.6 to 6.5 cards per screen.
+- Cards carried both a chevron and a "Details" link for the same action. The
+  whole card is now the expand target, with a delegated handler that ignores
+  clicks originating on a link or button so inner links keep native behaviour
+  and no nested interactive elements are introduced. The chevron remains the
+  sole focusable control, operable by Enter and Space.
+- The table/card container-query threshold dropped from 61rem to 54rem, so the
+  table appears from roughly 1180px rather than 1248px and fewer common laptop
+  widths land on the card layout.
+- On CVE detail pages the long CISA required-action text was in a ~200px column
+  while two short dates had the room. That is inverted: the prose is full width
+  at a comfortable measure and the dates sit in a compact row. The Copy button,
+  which did not say what it copied, now reads "Copy ID".
+
+Waves 4–5 cover platform polish and verification. Waves 6–10 migrate the visual
+system to WebTUI for a terminal-UI aesthetic, keeping the reading typeface, the
+validated palette, and the severity ramp.
 
 ## Feature milestone: connected evidence and local review
 
