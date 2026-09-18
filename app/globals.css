@@ -513,6 +513,26 @@ main {
   .distribution-value { grid-column: 2; grid-row: 1; }
 }
 
+/* Stacked variant — label gets the full row width (value top-right, track
+   below), for labels too long to share a fixed-width column, e.g. CWE
+   names. Same three regions, same track/fill/value styling, just laid out
+   in two lines instead of one. Applied at all widths, not just mobile. */
+.distribution-list--stacked .distribution-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  row-gap: 6px;
+}
+.distribution-list--stacked .distribution-track {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.distribution-list--stacked .distribution-value {
+  grid-column: 2;
+  grid-row: 1;
+}
+.distribution-list--stacked .distribution-label {
+  grid-row: 1;
+}
+
 /* Dashboard briefing — news/KEV previews and compact map (Phase C1).
    The map sits lower and smaller so the first viewport leads with the
    page purpose, summary metrics, and useful stories/vulnerabilities. */

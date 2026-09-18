@@ -7,35 +7,6 @@ import type { SourceStatus } from "@/lib/sources";
 
 export const runtime = "edge";
 
-/**
- * Build a contiguous range of day bins [start, end] (inclusive) from a
- * bucket map keyed by YYYY-MM-DD (UTC). Returns an empty array when the
- * window is missing/invalid.
- */
-function buildDayBins(
-  start: string | null,
-  end: string | null,
-  buckets: Record<string, number>
-): { date: string; count: number }[] {
-  if (!start || !end) return [];
-  const cursor = new Date(`${start}T00:00:00Z`);
-  const endDate = new Date(`${end}T00:00:00Z`);
-  if (
-    Number.isNaN(cursor.getTime()) ||
-    Number.isNaN(endDate.getTime()) ||
-    cursor > endDate
-  ) {
-    return [];
-  }
-  const bins: { date: string; count: number }[] = [];
-  while (cursor <= endDate) {
-    const day = cursor.toISOString().slice(0, 10);
-    bins.push({ date: day, count: buckets[day] ?? 0 });
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
-  }
-  return bins;
-}
-
 export async function GET() {
   try {
     const generatedAt = new Date().toISOString();
@@ -99,30 +70,8 @@ export async function GET() {
       else riskBreakdown.LOW++;
     }
 
-    // Daily trend — bucket items by UTC publication day, then lay a
-    // contiguous bin range over the ACTUAL snapshot window (not "today").
     const windowStart = cveResult?.windowStart ?? null;
     const windowEnd = cveResult?.windowEnd ?? null;
-
-    const buckets: Record<string, number> = {};
-    for (const cve of cveList) {
-      if (!cve.publishedAt) continue;
-      const day = cve.publishedAt.slice(0, 10); // YYYY-MM-DD
-      buckets[day] = (buckets[day] ?? 0) + 1;
-    }
-
-    let dailyTrend = buildDayBins(windowStart, windowEnd, buckets);
-    let coverageNote: string | null = null;
-    const hasRecordsInWindow =
-      windowStart !== null && windowEnd !== null
-        ? Object.keys(buckets).some(
-            (day) => day >= windowStart && day <= windowEnd
-          )
-        : false;
-    if (cveList.length === 0 || !hasRecordsInWindow) {
-      dailyTrend = [];
-      coverageNote = "No loaded records cover this period.";
-    }
 
     // Top CWEs (from structured cweIds parsed from NVD)
     const cweCounts: Record<string, number> = {};
@@ -227,8 +176,6 @@ export async function GET() {
         epssDistribution,
         attackVectors,
         riskBreakdown,
-        dailyTrend,
-        coverageNote,
         topCWEs,
         vendorMentions,
         totalCVEs: cveList.length,

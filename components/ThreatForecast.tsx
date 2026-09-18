@@ -39,6 +39,31 @@ function normalizeSeverity(severity: string | null): string {
   return ["CRITICAL", "HIGH", "MEDIUM", "LOW"].includes(key) ? key : "UNKNOWN";
 }
 
+// Single source of truth for the "how much of NVD is this" caveat (F7).
+// One statement carries the loaded count and the completeness state so the
+// scope of the register is said once, not three times: `partial` and
+// `unknown` are distinct facts (an unestablished total must stay `unknown`,
+// never be folded into `partial`), and an NVD fetch error takes priority
+// over both since it is the more specific, more actionable problem.
+function coverageStatement(
+  loadedCount: number,
+  completeness: Completeness,
+  nvdError: string | null
+): string {
+  const noun = loadedCount === 1 ? "CVE" : "CVEs";
+  const prefix = `${loadedCount} ${noun} loaded`;
+  if (nvdError !== null) {
+    return `${prefix} — NVD data could not be refreshed, so some information may be unavailable.`;
+  }
+  if (completeness === "partial") {
+    return `${prefix} — this is a partial NVD result set, so counts and CVEs are incomplete.`;
+  }
+  if (completeness === "unknown") {
+    return `${prefix} — NVD did not report a total result count, so coverage of this window is unknown.`;
+  }
+  return `${prefix} — NVD result set is complete.`;
+}
+
 export default function ThreatForecast() {
   const [cves, setCves] = useState<RiskScoredCVE[]>([]);
   const [kevCatalog, setKevCatalog] = useState<KEVItem[]>([]);
@@ -166,25 +191,14 @@ export default function ThreatForecast() {
 
   return (
     <div className="space-y-4">
-      {(completeness === "partial" ||
-        completeness === "unknown" ||
-        nvdError !== null) && (
-        <div
-          role="status"
-          className="state-note"
-        >
-          {nvdError !== null
-            ? "NVD data could not be loaded. Some information may be unavailable."
-            : completeness === "partial"
-              ? "Showing a partial NVD result set — counts and CVEs are incomplete."
-              : "NVD did not report a total result count, so coverage of this window cannot be confirmed."}
-        </div>
-      )}
-
-      <p className="metadata" aria-live="polite">
-        Showing {cves.length} loaded CVEs ·{" "}
-        <span className="font-mono">{completeness}</span>
-      </p>
+      {/* One statement for the whole view's scope: how many CVEs are loaded
+          and whether that set is complete, partial, or unknown (F7). This
+          replaces the old banner + metadata line, which said the same thing
+          twice. The live per-filter count stays in the toolbar below, since
+          it changes with the user's filters and this line does not. */}
+      <div role="status" className="state-note">
+        {coverageStatement(cves.length, completeness, nvdError)}
+      </div>
 
       <div className="panel rounded-lg overflow-hidden">
         {/* Search / filter toolbar */}
@@ -283,7 +297,9 @@ export default function ThreatForecast() {
               </button>
             </div>
             <p className="text-xs text-ui-muted">
-              Showing {filtered.length} of {cves.length} CVEs
+              {filtered.length}{" "}
+              {filtered.length === 1 ? "CVE matches" : "CVEs match"} the
+              current filters
             </p>
           </div>
         </div>

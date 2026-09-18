@@ -1,8 +1,13 @@
 // components/HackerNewsFeed.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatPublishedAt, plural } from "@/lib/format";
+import {
+  sortByEngagement,
+  sortByRecency,
+  type CommunitySortMode,
+} from "@/components/community-sort";
 
 interface HNStory {
   title: string;
@@ -17,6 +22,10 @@ export default function HackerNewsFeed() {
   const [stories, setStories] = useState<HNStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  // Recency is the default: a daily briefing should read as "what's new,"
+  // not an unstated relevance blend. "Top" re-ranks the same fetched batch
+  // by points client-side rather than issuing a second request.
+  const [sortMode, setSortMode] = useState<CommunitySortMode>("recent");
 
   useEffect(() => {
     // A fresh controller per fetch cycle so the cleanup abort never kills an
@@ -61,6 +70,14 @@ export default function HackerNewsFeed() {
     };
   }, []);
 
+  const sortedStories = useMemo(
+    () =>
+      sortMode === "top"
+        ? sortByEngagement(stories, (story) => story.points)
+        : sortByRecency(stories),
+    [stories, sortMode]
+  );
+
   if (loading) {
     return (
       <p className="state-panel" role="status"><strong>Hacker News</strong>Loading security discussions from the latest snapshot.</p>
@@ -78,6 +95,27 @@ export default function HackerNewsFeed() {
         </h2>
         <p className="metadata mt-1">Security discussions from Hacker News</p>
       </div>
+      {stories.length > 0 && (
+        <div className="flex items-center gap-2 px-4 pt-3">
+          <span className="text-xs text-ui-muted">Sort:</span>
+          <button
+            type="button"
+            aria-pressed={sortMode === "recent"}
+            onClick={() => setSortMode("recent")}
+            className="control-chip"
+          >
+            Recent
+          </button>
+          <button
+            type="button"
+            aria-pressed={sortMode === "top"}
+            onClick={() => setSortMode("top")}
+            className="control-chip"
+          >
+            Top
+          </button>
+        </div>
+      )}
       {error && stories.length === 0 ? (
         <p className="p-4 text-sm text-ui-muted">Unable to load Hacker News discussions</p>
       ) : stories.length === 0 ? (
@@ -90,7 +128,7 @@ export default function HackerNewsFeed() {
             </p>
           )}
           <div className="px-4">
-            {stories.slice(0, 10).map((story, i) => (
+            {sortedStories.slice(0, 10).map((story, i) => (
               <article
                 key={`${story.url}-${i}`}
                 className="community-row interactive-row"

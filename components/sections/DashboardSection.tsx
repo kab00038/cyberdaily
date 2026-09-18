@@ -6,16 +6,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import ThreatMap from "@/components/ThreatMap";
+import { DistributionList } from "@/components/ui/DistributionList";
 import {
   formatKevPrimaryLine,
   formatKevVendorProduct,
@@ -48,7 +40,9 @@ interface ThreatsData {
 }
 
 interface TrendsData {
-  dailyTrend: { date: string; count: number }[];
+  epssDistribution: { range: string; count: number }[];
+  totalCVEs: number;
+  epssCoverage: number;
 }
 
 type FetchStatus = "loading" | "ready" | "error";
@@ -84,13 +78,6 @@ function MetricCard({ label, scope, href, value, status }: MetricCardProps) {
     </Link>
   );
 }
-
-const TOOLTIP_STYLE = {
-  backgroundColor: "var(--cd-canvas)",
-  border: "1px solid var(--cd-border)",
-  borderRadius: "10px",
-  fontSize: "12px",
-};
 
 export default function DashboardSection() {
   const [threats, setThreats] = useState<ThreatsData | null>(null);
@@ -327,60 +314,42 @@ export default function DashboardSection() {
           </section>
         </div>
 
-        {/* Reported IP sample — compact and low on the page */}
-        <section>
-          <p className="metadata mb-2">
-            Sampled records — not a count of worldwide attacks.
-          </p>
-          <ThreatMap />
-        </section>
+        {/* Reported IP sample — compact and low on the page. The sampling
+            caveat lives once, inside the map panel itself (see
+            components/ThreatMap.tsx) rather than repeated here. */}
+        <ThreatMap />
 
-        {/* Analytics summary — single useful chart */}
+        {/* Analytics summary — single useful chart. EPSS distribution
+            replaces the former daily-trend chart: NVD's partial, capped
+            result set can't honestly answer "how many CVEs published per
+            day" (most days would be a fabricated zero), but it can
+            describe the loaded set's own EPSS scores. */}
         <section className="panel rounded-lg overflow-hidden">
           <div className="panel-header flex items-center justify-between gap-4">
-            <h2 className="section-title">14-day CVE trend</h2>
+            <h2 className="section-title">EPSS score distribution</h2>
             <Link href="/analytics" className="text-link text-xs font-medium shrink-0">
               View all analytics →
             </Link>
           </div>
           <div className="panel-body">
-            <p className="metadata mb-4">NVD · 14-day publication window · {trends?.dailyTrend ? `${plural(trends.dailyTrend.reduce((total, day) => total + day.count, 0), "record")} in plotted bins` : "sample size unavailable"}</p>
+            <p className="metadata mb-4">
+              {trends
+                ? `${plural(trends.totalCVEs, "loaded CVE")}, ${trends.epssCoverage} EPSS scored`
+                : "Sample size unavailable"}
+            </p>
             {trendsStatus === "loading" && <p className="state-panel" role="status">Loading the NVD publication window.</p>}
             {trendsStatus === "error" && (
               <p className="state-panel" role="status">Chart unavailable.</p>
             )}
-            {trendsStatus === "ready" && trends?.dailyTrend && (
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={trends.dailyTrend}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255, 255, 255, 0.05)"
-                  />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: "var(--cd-muted)", fontSize: 10 }}
-                    tickFormatter={(v) => v.slice(5)}
-                  />
-                  <YAxis
-                    tick={{ fill: "var(--cd-muted)", fontSize: 10 }}
-                    allowDecimals={false}
-                  />
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    itemStyle={{ color: "var(--cd-secondary)" }}
-                    labelStyle={{ color: "var(--cd-muted)" }}
-                  />
-                  <Area
-                    isAnimationActive={false}
-                    type="monotone"
-                    dataKey="count"
-                    stroke="var(--cd-accent)"
-                    fill="var(--cd-accent)"
-                    fillOpacity={0.12}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            {trendsStatus === "ready" && trends?.epssDistribution && (
+              <DistributionList
+                rows={trends.epssDistribution.map((bucket) => ({
+                  id: bucket.range,
+                  label: bucket.range,
+                  count: bucket.count,
+                }))}
+                total={trends.epssDistribution.reduce((sum, b) => sum + b.count, 0)}
+              />
             )}
           </div>
         </section>

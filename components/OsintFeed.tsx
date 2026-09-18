@@ -1,8 +1,13 @@
 // components/OsintFeed.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatPublishedAt, plural } from "@/lib/format";
+import {
+  sortByEngagement,
+  sortByRecency,
+  type CommunitySortMode,
+} from "@/components/community-sort";
 
 interface OsintPost {
   title: string;
@@ -32,6 +37,11 @@ export default function OsintFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedSub, setSelectedSub] = useState<string>("all");
+  // Recency is the default, matching HackerNewsFeed, so the two community
+  // panels behave identically. "Top" re-ranks by score client-side; engine
+  // sort already applies the "undated/null sinks last" rule on the fetch
+  // side (lib/osint.ts) and here for the "Top" ordering.
+  const [sortMode, setSortMode] = useState<CommunitySortMode>("recent");
 
   useEffect(() => {
     // A fresh controller per fetch cycle so the cleanup abort never kills an
@@ -74,15 +84,25 @@ export default function OsintFeed() {
     };
   }, []);
 
-  const subreddits = [
-    "all",
-    ...new Set(posts.map((p) => p.subreddit).filter(Boolean)),
-  ];
+  // Real sibling options, not derived from whatever happened to load: the
+  // monitored-subreddit list is fixed (mirrors lib/osint.ts's SUBREDDITS),
+  // so the filter row always has actual choices instead of occasionally
+  // rendering as a lone "All" chip when only one subreddit's posts came
+  // back in a given fetch.
+  const subreddits = ["all", ...Object.keys(SUBREDDIT_COLORS)];
 
   const filtered =
     selectedSub === "all"
       ? posts
       : posts.filter((p) => p.subreddit === selectedSub);
+
+  const sortedPosts = useMemo(
+    () =>
+      sortMode === "top"
+        ? sortByEngagement(filtered, (post) => post.score)
+        : sortByRecency(filtered),
+    [filtered, sortMode]
+  );
 
   // Most-frequent subreddit in the current load, used for the footer link so
   // "View more discussions" lands on the community people actually read.
@@ -140,6 +160,26 @@ export default function OsintFeed() {
         ))}
       </div>
 
+      <div className="flex items-center gap-2 px-4 pb-3">
+        <span className="text-xs text-ui-muted">Sort:</span>
+        <button
+          type="button"
+          aria-pressed={sortMode === "recent"}
+          onClick={() => setSortMode("recent")}
+          className="control-chip"
+        >
+          Recent
+        </button>
+        <button
+          type="button"
+          aria-pressed={sortMode === "top"}
+          onClick={() => setSortMode("top")}
+          className="control-chip"
+        >
+          Top
+        </button>
+      </div>
+
       <p className="px-4 pb-1 text-xs text-ui-muted">
         Engagement counts are extracted from RSS content and may be unavailable
         for some posts.
@@ -157,7 +197,7 @@ export default function OsintFeed() {
             </p>
           )}
           <div className="px-4">
-            {filtered.slice(0, 15).map((post, i) => (
+            {sortedPosts.slice(0, 15).map((post, i) => (
               <article
                 key={`${post.url}-${i}`}
                 className="community-row interactive-row"

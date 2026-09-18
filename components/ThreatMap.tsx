@@ -182,10 +182,7 @@ export default function ThreatMap() {
             Reported IP sample
           </h2>
           <p className="text-xs text-ui-muted mt-1 font-mono">
-            blocklist.de · sampled records with IP geolocation
-          </p>
-          <p className="text-[11px] text-ui-muted mt-0.5 font-mono">
-            This is a category-balanced sample, not a count of worldwide attacks.
+            blocklist.de · category-balanced sample with IP geolocation, not a count of worldwide attacks.
           </p>
           <p className="text-[11px] text-ui-muted mt-0.5 font-mono">
             {snapshotTime
