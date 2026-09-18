@@ -88,7 +88,7 @@ export default function HackerNewsFeed() {
     <div className="panel rounded-lg overflow-hidden">
       <div className="panel-header">
         <h2 className="section-title flex items-center gap-2">
-          <svg className="w-4 h-4 text-ui-accent" fill="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-ui-accent" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2L2 22h20L12 2zm0 3.5L18.5 20H5.5L12 5.5z" />
           </svg>
           Hacker News

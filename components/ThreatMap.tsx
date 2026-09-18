@@ -438,7 +438,7 @@ export default function ThreatMap() {
                     aria-current={selectedCountry === row.country ? "true" : undefined}
                     className={`interactive-row flex items-baseline justify-between gap-3 w-full px-3 py-2.5 text-left border-l-2 transition-colors ${
                       selectedCountry === row.country
-                        ? "border-ui-accent bg-ui-accent/10"
+                        ? "border-ui-accent bg-ui-accent-soft"
                         : "border-transparent"
                     }`}
                   >

@@ -266,7 +266,7 @@ export default function NewsToolbar({
           <button
             type="button"
             onClick={clearFilters}
-            className="mb-0.5 text-xs font-mono text-ui-accent border border-ui-accent/30 rounded px-3 py-2 hover:bg-ui-accent/10 transition-colors"
+            className="mb-0.5 text-xs font-mono text-ui-accent border border-ui-accent rounded px-3 py-2 hover:bg-ui-accent-soft transition-colors"
           >
             Clear filters
           </button>

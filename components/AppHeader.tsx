@@ -42,7 +42,7 @@ export default function AppHeader({
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav-drawer"
           >
-            <svg
+            <svg aria-hidden="true" focusable="false"
               className="w-5 h-5"
               fill="none"
               stroke="currentColor"
@@ -69,7 +69,7 @@ export default function AppHeader({
             aria-label="Refresh page"
             className="icon-button"
           >
-            <svg
+            <svg aria-hidden="true" focusable="false"
               className="w-4 h-4"
               fill="none"
               stroke="currentColor"

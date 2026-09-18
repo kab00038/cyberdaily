@@ -17,7 +17,6 @@
     "@cloudflare/next-on-pages": "^1.13.16",
     "d3-geo": "^3.1.1",
     "fast-xml-parser": "^5.11.1",
-    "framer-motion": "^13.2.0",
     "next": "^15.5.2",
     "react": "19.2.8",
     "react-dom": "19.2.8",
