@@ -235,7 +235,7 @@ export default function DashboardSection() {
                       <h3 className="story-headline line-clamp-2 group-hover:text-ui-accent transition-colors">
                         {item.title}
                       </h3>
-                      <p className="text-xs text-ui-secondary line-clamp-2 mt-1 leading-relaxed">
+                      <p className="prose-measure text-[13px] text-ui-secondary line-clamp-2 mt-1 leading-relaxed">
                         {item.aiSummary || item.snippet}
                       </p>
                     </a>

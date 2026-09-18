@@ -110,6 +110,23 @@ html { scroll-padding-top: 5rem; }
   max-width: 60ch;
 }
 
+/* Line-measure cap for running prose (F6) — story deks, CVE summaries, KEV
+   short descriptions. `ch` is relative to the element's own font-size, so
+   this caps character count consistently regardless of where it's applied.
+   Deliberately NOT applied to headlines, labels, metadata, or table cells —
+   those either need the full width or already sit in a narrow column where
+   a cap would do nothing.
+
+   On 55ch rather than the ~68ch you might expect: CSS `ch` is the width of
+   the "0" glyph, which in DM Sans is 0.637em, while an average character in
+   running English text measures 0.499em. So a `ch` cap renders roughly 1.27x
+   more characters than its number suggests — `68ch` was measured at 87
+   characters per line, well past the 45-75 comfortable band. 55ch measures
+   ~70. Re-measure before changing this; do not "correct" it back upward. */
+.prose-measure {
+  max-width: 55ch;
+}
+
 /* Page-level hierarchy — each page renders exactly one content h1 in a
    `.page-header`, with the panels flowing in a `.page-body` grid. */
 .page-header {
@@ -193,7 +210,7 @@ html { scroll-padding-top: 5rem; }
   display: block;
 }
 
-@container (min-width: 61rem) {
+@container (min-width: 54rem) {
   .vulnerability-table-view {
     display: block;
   }

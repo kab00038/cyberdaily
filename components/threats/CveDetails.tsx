@@ -54,14 +54,17 @@ function formatPercentileValue(value: string | undefined): string {
 function Metric({
   label,
   children,
+  className = "",
 }: {
   label: string;
   children: React.ReactNode;
+  /** Extra classes for the value (`dd`) — e.g. a measure cap on long prose. */
+  className?: string;
 }) {
   return (
     <div>
       <dt className="text-xs text-ui-muted">{label}</dt>
-      <dd className="mt-0.5 text-ui-secondary">{children}</dd>
+      <dd className={`mt-0.5 text-ui-secondary ${className}`}>{children}</dd>
     </div>
   );
 }
@@ -82,7 +85,11 @@ export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetails
           <h4 className="font-mono text-sm font-semibold text-ui-text">
             {cve.id}
           </h4>
-          <CopyButton value={cve.id} ariaLabel="Copy CVE ID to clipboard" />
+          <CopyButton
+            value={cve.id}
+            label="Copy ID"
+            ariaLabel="Copy CVE ID to clipboard"
+          />
         </div>
       )}
 
@@ -151,14 +158,24 @@ export default function CveDetails({ cve, kev, showIdHeader = true }: CveDetails
             </svg>
             Listed in CISA KEV
           </h4>
-          <dl className="mt-2 grid gap-x-8 gap-y-2 text-xs sm:grid-cols-3">
-            <Metric label="Required action">{kev.requiredAction}</Metric>
-            <Metric label="Date added">
-              <span className="font-mono">{formatIsoDate(kev.dateAdded)}</span>
+          {/* Required action is a long CISA sentence (~300 chars). It gets the
+              full section width capped by the shared `.prose-measure` utility,
+              instead of squeezing into a 1-of-3 grid column as it used to. The
+              two dates are short and sit together in a compact row below. See
+              the comment on `.prose-measure` in globals.css before changing the
+              cap — the `ch` unit renders wider than its number suggests. */}
+          <dl className="mt-2 flex flex-col gap-3 text-xs">
+            <Metric label="Required action" className="prose-measure">
+              {kev.requiredAction}
             </Metric>
-            <Metric label="Due date">
-              <span className="font-mono">{formatIsoDate(kev.dueDate)}</span>
-            </Metric>
+            <div className="flex flex-wrap gap-x-8 gap-y-2">
+              <Metric label="Date added">
+                <span className="font-mono">{formatIsoDate(kev.dateAdded)}</span>
+              </Metric>
+              <Metric label="Due date">
+                <span className="font-mono">{formatIsoDate(kev.dueDate)}</span>
+              </Metric>
+            </div>
           </dl>
         </section>
       )}

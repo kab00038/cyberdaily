@@ -97,7 +97,7 @@ export default function CveDetailClient({ id }: { id: string }) {
         <section className="panel rounded-lg overflow-hidden">
           <div className="panel-header flex flex-wrap items-center justify-between gap-3">
             <h2 className="section-title">Record details</h2>
-            <CopyButton value={id} ariaLabel="Copy CVE ID to clipboard" />
+            <CopyButton value={id} label="Copy ID" ariaLabel="Copy CVE ID to clipboard" />
           </div>
           <p className="state-panel" role="status"><strong>Loading record details</strong>Retrieving available assessments and references for this CVE.</p>
         </section>
@@ -107,7 +107,7 @@ export default function CveDetailClient({ id }: { id: string }) {
         <section className="panel rounded-lg overflow-hidden">
           <div className="panel-header flex flex-wrap items-center justify-between gap-3">
             <h2 className="section-title">Record details</h2>
-            <CopyButton value={id} ariaLabel="Copy CVE ID to clipboard" />
+            <CopyButton value={id} label="Copy ID" ariaLabel="Copy CVE ID to clipboard" />
           </div>
           <p role="status" className="p-4 text-sm text-ui-secondary">
             Failed to load details for this CVE. Please try again.
@@ -121,6 +121,7 @@ export default function CveDetailClient({ id }: { id: string }) {
             <h2 className="section-title">Record details</h2>
             <CopyButton
               value={data.cve?.id ?? data.kev?.cveID ?? id}
+              label="Copy ID"
               ariaLabel="Copy CVE ID to clipboard"
             />
           </div>
@@ -149,40 +150,49 @@ export default function CveDetailClient({ id }: { id: string }) {
                 below are from CISA KEV.
               </p>
 
-              <dl className="mt-4 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
-                <div>
-                  <dt className="text-xs text-ui-muted">Vendor / project</dt>
-                  <dd className="mt-0.5 text-ui-secondary">
-                    {data.kev.vendorProject}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-ui-muted">Product</dt>
-                  <dd className="mt-0.5 text-ui-secondary">{data.kev.product}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-ui-muted">Vulnerability</dt>
-                  <dd className="mt-0.5 text-ui-secondary">
-                    {data.kev.vulnerabilityName}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-ui-muted">Date added</dt>
-                  <dd className="mt-0.5 font-mono text-ui-secondary">
-                    {formatIsoDate(data.kev.dateAdded)}
-                  </dd>
+              {/* Short values (vendor, product, vulnerability name) share a
+                  2-up grid; the long CISA "required action" sentence gets its
+                  own full-width row capped by the shared `.prose-measure`
+                  utility instead of a half-width column, and the two dates —
+                  the shortest values here — sit together in a compact row. */}
+              <dl className="mt-4 flex flex-col gap-3 text-sm">
+                <div className="grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs text-ui-muted">Vendor / project</dt>
+                    <dd className="mt-0.5 text-ui-secondary">
+                      {data.kev.vendorProject}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-ui-muted">Product</dt>
+                    <dd className="mt-0.5 text-ui-secondary">{data.kev.product}</dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs text-ui-muted">Vulnerability</dt>
+                    <dd className="mt-0.5 text-ui-secondary">
+                      {data.kev.vulnerabilityName}
+                    </dd>
+                  </div>
                 </div>
                 <div>
                   <dt className="text-xs text-ui-muted">Required action</dt>
-                  <dd className="mt-0.5 text-ui-secondary">
+                  <dd className="mt-0.5 prose-measure text-ui-secondary">
                     {data.kev.requiredAction}
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-xs text-ui-muted">Due date</dt>
-                  <dd className="mt-0.5 font-mono text-ui-secondary">
-                    {formatIsoDate(data.kev.dueDate)}
-                  </dd>
+                <div className="flex flex-wrap gap-x-8 gap-y-2">
+                  <div>
+                    <dt className="text-xs text-ui-muted">Date added</dt>
+                    <dd className="mt-0.5 font-mono text-ui-secondary">
+                      {formatIsoDate(data.kev.dateAdded)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-ui-muted">Due date</dt>
+                    <dd className="mt-0.5 font-mono text-ui-secondary">
+                      {formatIsoDate(data.kev.dueDate)}
+                    </dd>
+                  </div>
                 </div>
               </dl>
 

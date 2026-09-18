@@ -89,11 +89,34 @@ function ExploitedBadge({ state }: { state: ExploitState }) {
   };
   return (
     <span
-      className={`inline-block rounded border px-2 py-0.5 text-[11px] ${classes[state]}`}
+      className={`inline-block rounded border px-2 py-0.5 text-[13px] leading-tight ${classes[state]}`}
     >
       {labels[state]}
     </span>
   );
+}
+
+/**
+ * Card view (F21): the whole card is the expand target, but the card element
+ * itself carries no interactive role — the visible chevron button stays the
+ * sole focusable, ARIA-wired control (aria-expanded/aria-controls, real Tab
+ * stop, Enter/Space via native <button> semantics). This delegated click
+ * handler only widens *where a pointer click can land* to trigger the same
+ * toggle; it never intercepts a click that started on (or inside) a real
+ * link or button — those keep their native behavior untouched, and clicking
+ * the chevron button itself fires exactly once (the button's own onClick
+ * handles it; this handler sees the bubbled event, matches `closest("a,
+ * button")`, and bails out before calling onToggleExpand a second time).
+ */
+function makeCardClickHandler(
+  onToggleExpand: (id: string) => void,
+  id: string
+) {
+  return (event: React.MouseEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("a, button")) return;
+    onToggleExpand(id);
+  };
 }
 
 export default function CveTable({
@@ -401,11 +424,13 @@ export default function CveTable({
 
           return (
             <article
-              className="vulnerability-card"
+              className="vulnerability-card interactive-row cursor-pointer"
               key={cve.id}
               aria-label={`CVE ${cve.id}`}
+              style={{ paddingTop: 12, paddingBottom: 12 }}
+              onClick={makeCardClickHandler(onToggleExpand, cve.id)}
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => onToggleExpand(cve.id)}
@@ -434,14 +459,14 @@ export default function CveTable({
                 <SeverityBadge severity={cve.severity} score={cve.cvssScore} />
               </div>
 
-              <p className="mt-2 text-xs leading-relaxed text-ui-secondary">
+              <p className="prose-measure mt-1.5 line-clamp-2 text-[13px] leading-snug text-ui-secondary">
                 {cve.description}
               </p>
 
               {isKevOnlyStub(cve) && kevOnlyIndicator(cve)}
 
-              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
-                <div>
+              <dl className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
+                <div className="flex items-center gap-1.5">
                   <dt className="text-ui-muted">EPSS</dt>
                   <dd className="font-mono text-ui-secondary">
                     {cve.epssScore
@@ -449,29 +474,19 @@ export default function CveTable({
                       : "Unavailable"}
                   </dd>
                 </div>
-                <div>
+                <div className="flex items-center gap-1.5">
                   <dt className="text-ui-muted">Exploitation</dt>
                   <dd>
                     <ExploitedBadge state={exploitState} />
                   </dd>
                 </div>
-                <div>
+                <div className="flex items-center gap-1.5">
                   <dt className="text-ui-muted">Published</dt>
                   <dd className="font-mono text-ui-secondary">
                     {formatPublishedAt(cve.publishedAt)}
                   </dd>
                 </div>
               </dl>
-
-              <button
-                type="button"
-                onClick={() => onToggleExpand(cve.id)}
-                aria-expanded={expanded}
-                aria-controls={`cve-details-card-${cve.id}`}
-                className="mt-3 text-xs font-semibold text-ui-accent transition-colors hover:text-ui-accent"
-              >
-                {expanded ? "Hide details" : "Details"}
-              </button>
 
               {expanded && (
                 <div

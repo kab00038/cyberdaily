@@ -31,7 +31,7 @@ export default function NewsRow({ item, dateLabel }: NewsRowProps) {
           </a>
         </h3>
 
-        <p className="mt-1 text-sm leading-relaxed text-ui-secondary line-clamp-2">
+        <p className="prose-measure mt-1 text-sm leading-relaxed text-ui-secondary line-clamp-2">
           {item.snippet}
         </p>
 
